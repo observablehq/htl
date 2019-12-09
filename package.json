@@ -1,0 +1,24 @@
+{
+  "name": "htl",
+  "version": "0.0.0",
+  "description": "Hypertext Literal",
+  "main": "index.js",
+  "author": {
+    "name": "Mike Bostock",
+    "url": "https://bost.ocks.org/mike"
+  },
+  "homepage": "https://github.com/observablehq/htl",
+  "license": "ISC",
+  "files": [
+    "dist/**/*.js",
+    "src/**/*.js"
+  ],
+  "scripts": {
+    "prepublishOnly": "rm -rf dist && rollup -c && git push",
+    "postpublish": "git push --tags"
+  },
+  "devDependencies": {
+    "rollup": "1",
+    "rollup-plugin-terser": "5"
+  }
+}
