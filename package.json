@@ -2,7 +2,9 @@
   "name": "htl",
   "version": "0.0.1",
   "description": "Hypertext Literal",
-  "main": "index.js",
+  "main": "dist/htl.js",
+  "unpkg": "dist/htl.min.js",
+  "module": "src/index.js",
   "author": {
     "name": "Mike Bostock",
     "url": "https://bost.ocks.org/mike"
