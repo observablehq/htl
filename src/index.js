@@ -419,14 +419,14 @@ function hypertext(parse, wrap = root => root) {
             node.removeAttribute(attribute.name);
             for (const key in value) {
               const subvalue = value[key];
-              if (subvalue == null) {
+              if (subvalue == null || subvalue === false) {
                 // ignore
-              } else if (typeof subvalue === "function" || typeof node[key] === "boolean") {
+              } else if (typeof subvalue === "function") {
                 node[key] = subvalue;
               } else if (key === "style" && isObjectLiteral(subvalue)) {
                 Object.assign(node[key], subvalue);
               } else {
-                node.setAttribute(key, subvalue); // TODO setAttributeNS?
+                node.setAttribute(key, subvalue === true ? "" : subvalue); // TODO setAttributeNS?
               }
             }
           }
