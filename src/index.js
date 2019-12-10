@@ -453,13 +453,9 @@ function hypertext(parse, wrap = root => root) {
       }
     }
 
-    if (root.firstChild
-        && root.firstChild === root.lastChild
-        && root.firstChild.nodeType === 1) {
-      return root.removeChild(root.firstChild);
-    }
-
-    return wrap(root);
+    return root.firstChild === null ? null
+        : root.firstChild === root.lastChild ? root.removeChild(root.firstChild)
+        : wrap(root);
   };
 }
 
