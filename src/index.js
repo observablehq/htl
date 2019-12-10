@@ -159,7 +159,7 @@ function hypertext(render) {
           case STATE_END_TAG_OPEN: {
             if (isAsciiAlphaCode(code)) {
               state = STATE_TAG_NAME, --i;
-            } else if (code == CODE_GT) {
+            } else if (code === CODE_GT) {
               state = STATE_DATA;
             } else {
               state = STATE_BOGUS_COMMENT, --i;
@@ -205,9 +205,9 @@ function hypertext(render) {
               // ignore
             } else if (code === CODE_SLASH) {
               state = STATE_SELF_CLOSING_START_TAG;
-            } else if (code == CODE_EQ) {
+            } else if (code === CODE_EQ) {
               state = STATE_BEFORE_ATTRIBUTE_VALUE;
-            } else if (code == CODE_GT) {
+            } else if (code === CODE_GT) {
               state = STATE_DATA;
             } else {
               state = STATE_ATTRIBUTE_NAME, --i;
