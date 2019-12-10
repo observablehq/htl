@@ -82,7 +82,9 @@ function hypertext(parse, wrap = root => root) {
         const value = arguments[j];
         switch (state) {
           case STATE_DATA: {
-            if (value instanceof Node || (typeof value !== "string" && value[Symbol.iterator])) {
+            if (value == null) {
+              // ignore
+            } else if (value instanceof Node || (typeof value !== "string" && value[Symbol.iterator])) {
               string += "<!--::" + j + "-->";
               nodeFilter |= SHOW_COMMENT;
             } else {
@@ -95,17 +97,17 @@ function hypertext(parse, wrap = root => root) {
             const code = input.charCodeAt(0);
             if (isSpaceCode(code) || code === CODE_GT) {
               const name = strings[j - 1].slice(nameStart, nameEnd);
-              if ((name === "style" && isObjectLiteral(value))
-                  || (/^on/.test(name) && typeof value === "function")) {
+              if ((name === "style" && isObjectLiteral(value)) || typeof value === "function") {
                 string += "::" + j;
                 nodeFilter |= SHOW_ELEMENT;
                 break;
               }
             }
-            // nobreak
+            string += (value + "").replace(/^['"]|[\s>]/g, entity);
+            break;
           }
           case STATE_ATTRIBUTE_VALUE_UNQUOTED: {
-            string += (value + "").replace(/\s/g, entity);
+            string += (value + "").replace(/[\s>]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED: {
@@ -398,9 +400,9 @@ function hypertext(parse, wrap = root => root) {
           }
           if (valueMarkers) for (const attribute of valueMarkers) {
             const value = arguments[+attribute.value.slice(2)];
-            if (/^on/.test(attribute.name) && typeof value === "function") {
+            if (typeof value === "function") {
               node.removeAttribute(attribute.name);
-              node.addEventListener(attribute.name.slice(2), value);
+              node[attribute.name] = value;
             } else { // style
               Object.assign(node[attribute.name], value);
             }
@@ -410,14 +412,14 @@ function hypertext(parse, wrap = root => root) {
             node.removeAttribute(attribute.name);
             for (const key in value) {
               const subvalue = value[key];
-              if (/^on/.test(key) && typeof subvalue === "function") {
-                node.addEventListener(key.slice(2), subvalue);
+              if (subvalue == null) {
+                // ignore
+              } else if (typeof subvalue === "function" || typeof node[key] === "boolean") {
+                node[key] = subvalue;
               } else if (key === "style" && isObjectLiteral(subvalue)) {
                 Object.assign(node[key], subvalue);
-              } else if (typeof node[key] === "boolean") {
-                node[key] = subvalue;
               } else {
-                node.setAttribute(key, subvalue); // TODO setAttributeNS
+                node.setAttribute(key, subvalue); // TODO setAttributeNS?
               }
             }
           }
@@ -431,6 +433,7 @@ function hypertext(parse, wrap = root => root) {
               parent.replaceChild(value, node);
             } else if (typeof value !== "string" && value[Symbol.iterator]) {
               for (const subvalue of value) {
+                if (subvalue == null) continue;
                 parent.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
               }
               parent.removeChild(node);
