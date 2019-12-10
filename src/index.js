@@ -119,11 +119,11 @@ function hypertext(parse, wrap = root => root) {
             break;
           }
           case STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED: {
-            string += (value + "").replace(/\'/g, entity);
+            string += (value + "").replace(/'/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_DOUBLE_QUOTED: {
-            string += (value + "").replace(/\"/g, entity);
+            string += (value + "").replace(/"/g, entity);
             break;
           }
           case STATE_BEFORE_ATTRIBUTE_NAME: {
