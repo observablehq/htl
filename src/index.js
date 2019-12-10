@@ -93,9 +93,17 @@ function hypertext(parse, wrap = root => root) {
             break;
           }
           case STATE_BEFORE_ATTRIBUTE_VALUE: {
-            state = STATE_ATTRIBUTE_VALUE_UNQUOTED;
             const code = input.charCodeAt(0);
+            state = STATE_ATTRIBUTE_VALUE_UNQUOTED;
             if (isSpaceCode(code) || code === CODE_GT) {
+              if (value == null || value === false) {
+                string = string.slice(0, nameStart - strings[j - 1].length);
+                break;
+              }
+              if (value === true) {
+                string += "''";
+                break;
+              }
               const name = strings[j - 1].slice(nameStart, nameEnd);
               if ((name === "style" && isObjectLiteral(value)) || typeof value === "function") {
                 string += "::" + j;
