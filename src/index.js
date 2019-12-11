@@ -78,8 +78,7 @@ function hypertext(render) {
               // ignore
             } else if (value instanceof Node
                 || (typeof value !== "string" && value[Symbol.iterator])
-                || (j === 1 ? strings[0] === "" : />$/.test(strings[j - 1]))
-                || input.charCodeAt(0) === CODE_LT) {
+                || (/(?:^|>)$/.test(strings[j - 1]) && /^(?:<|$)/.test(input))) {
               string += "<!--::" + j + "-->";
               nodeFilter |= SHOW_COMMENT;
             } else {
@@ -88,9 +87,8 @@ function hypertext(render) {
             break;
           }
           case STATE_BEFORE_ATTRIBUTE_VALUE: {
-            const code = input.charCodeAt(0);
             state = STATE_ATTRIBUTE_VALUE_UNQUOTED;
-            if (isSpaceCode(code) || code === CODE_GT) {
+            if (/^[\s>]/.test(input)) {
               if (value == null || value === false) {
                 string = string.slice(0, nameStart - strings[j - 1].length);
                 break;
