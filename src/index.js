@@ -1,23 +1,14 @@
-export const html = hypertext(
-  string => {
-    const template = document.createElement("template");
-    template.innerHTML = string;
-    return template.content;
-  },
-  root => {
-    const span = document.createElement("span");
-    span.appendChild(root);
-    return span;
-  }
-);
+export const html = hypertext(string => {
+  const template = document.createElement("template");
+  template.innerHTML = string;
+  return template.content;
+});
 
-export const svg = hypertext(
-  string => {
-    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
-    g.innerHTML = string;
-    return g;
-  }
-);
+export const svg = hypertext(string => {
+  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  g.innerHTML = string;
+  return g;
+});
 
 const
 CODE_TAB = 9,
@@ -66,7 +57,7 @@ STATE_MARKUP_DECLARATION_OPEN = 25,
 SHOW_COMMENT = 128,
 SHOW_ELEMENT = 1;
 
-function hypertext(parse, wrap = root => root) {
+function hypertext(render) {
   return function(strings) {
     let state = STATE_DATA;
     let string = "";
@@ -383,7 +374,7 @@ function hypertext(parse, wrap = root => root) {
       string += input;
     }
 
-    const root = parse(string);
+    const root = render(string);
 
     // TODO Set a specific attribute so we can use querySelectorAll for attributes,
     // and only use the slower tree walker for replacing comment nodes in data.
@@ -439,9 +430,15 @@ function hypertext(parse, wrap = root => root) {
             if (value instanceof Node) {
               parent.replaceChild(value, node);
             } else if (typeof value !== "string" && value[Symbol.iterator]) {
-              for (const subvalue of value) {
-                if (subvalue == null) continue;
-                parent.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
+              if (value instanceof NodeList || value instanceof HTMLCollection) {
+                for (let i = value.length - 1, r = node; i >= 0; --i) {
+                  r = parent.insertBefore(value[i], r);
+                }
+              } else {
+                for (const subvalue of value) {
+                  if (subvalue == null) continue;
+                  parent.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
+                }
               }
               parent.removeChild(node);
             } else {
@@ -455,7 +452,7 @@ function hypertext(parse, wrap = root => root) {
 
     return root.firstChild === null ? null
         : root.firstChild === root.lastChild ? root.removeChild(root.firstChild)
-        : wrap(root);
+        : root;
   };
 }
 
