@@ -76,7 +76,10 @@ function hypertext(render) {
           case STATE_DATA: {
             if (value == null) {
               // ignore
-            } else if (value instanceof Node || (typeof value !== "string" && value[Symbol.iterator])) {
+            } else if (value instanceof Node
+                || (typeof value !== "string" && value[Symbol.iterator])
+                || (j === 1 ? strings[0] === "" : />$/.test(strings[j - 1]))
+                || input.charCodeAt(0) === CODE_LT) {
               string += "<!--::" + j + "-->";
               nodeFilter |= SHOW_COMMENT;
             } else {
