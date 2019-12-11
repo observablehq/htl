@@ -55,7 +55,9 @@ STATE_COMMENT_END = 23,
 STATE_COMMENT_END_BANG = 24,
 STATE_MARKUP_DECLARATION_OPEN = 25,
 SHOW_COMMENT = 128,
-SHOW_ELEMENT = 1;
+SHOW_ELEMENT = 1,
+TYPE_COMMENT = 8,
+TYPE_ELEMENT = 1;
 
 function hypertext(render) {
   return function(strings) {
@@ -376,59 +378,48 @@ function hypertext(render) {
 
     const root = render(string);
 
-    // TODO Set a specific attribute so we can use querySelectorAll for attributes,
-    // and only use the slower tree walker for replacing comment nodes in data.
     const walker = document.createTreeWalker(root, nodeFilter, null, false);
+    const removeNodes = [];
     while (walker.nextNode()) {
       const node = walker.currentNode;
       switch (node.nodeType) {
-        case 1: { // element
+        case TYPE_ELEMENT: {
           const attributes = node.attributes;
-          let spreadMarkers;
-          let valueMarkers;
           for (let i = 0, n = attributes.length; i < n; ++i) {
             const attribute = attributes[i];
             if (/^::/.test(attribute.name)) {
-              if (spreadMarkers) spreadMarkers.push(attribute);
-              else spreadMarkers = [attribute];
+              const value = arguments[+attribute.name.slice(2)];
+              node.removeAttribute(attribute.name), --i, --n;
+              for (const key in value) {
+                const subvalue = value[key];
+                if (subvalue == null || subvalue === false) {
+                  // ignore
+                } else if (typeof subvalue === "function") {
+                  node[key] = subvalue;
+                } else if (key === "style" && isObjectLiteral(subvalue)) {
+                  Object.assign(node[key], subvalue);
+                } else {
+                  node.setAttribute(key, subvalue === true ? "" : subvalue);
+                }
+              }
             } else if (/^::/.test(attribute.value)) {
-              if (valueMarkers) valueMarkers.push(attribute);
-              else valueMarkers = [attribute];
-            }
-          }
-          if (valueMarkers) for (const attribute of valueMarkers) {
-            const value = arguments[+attribute.value.slice(2)];
-            if (typeof value === "function") {
-              node.removeAttribute(attribute.name);
-              node[attribute.name] = value;
-            } else { // style
-              Object.assign(node[attribute.name], value);
-            }
-          }
-          if (spreadMarkers) for (const attribute of spreadMarkers) {
-            const value = arguments[+attribute.name.slice(2)];
-            node.removeAttribute(attribute.name);
-            for (const key in value) {
-              const subvalue = value[key];
-              if (subvalue == null || subvalue === false) {
-                // ignore
-              } else if (typeof subvalue === "function") {
-                node[key] = subvalue;
-              } else if (key === "style" && isObjectLiteral(subvalue)) {
-                Object.assign(node[key], subvalue);
-              } else {
-                node.setAttribute(key, subvalue === true ? "" : subvalue); // TODO setAttributeNS?
+              const value = arguments[+attribute.value.slice(2)];
+              node.removeAttribute(attribute.name), --i, --n;
+              if (typeof value === "function") {
+                node[attribute.name] = value;
+              } else { // style
+                Object.assign(node[attribute.name], value);
               }
             }
           }
           break;
         }
-        case 8: { // comment
+        case TYPE_COMMENT: {
           if (/^::/.test(node.data)) {
             const parent = node.parentNode;
             const value = arguments[+node.data.slice(2)];
             if (value instanceof Node) {
-              parent.replaceChild(value, node);
+              parent.insertBefore(value, node);
             } else if (typeof value !== "string" && value[Symbol.iterator]) {
               if (value instanceof NodeList || value instanceof HTMLCollection) {
                 for (let i = value.length - 1, r = node; i >= 0; --i) {
@@ -440,14 +431,18 @@ function hypertext(render) {
                   parent.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
                 }
               }
-              parent.removeChild(node);
             } else {
-              parent.replaceChild(document.createTextNode(value), node);
+              parent.insertBefore(document.createTextNode(value), node);
             }
+            removeNodes.push(node);
           }
           break;
         }
       }
+    }
+
+    for (const node of removeNodes) {
+      node.parentNode.removeChild(node);
     }
 
     return root.firstChild === null ? null
