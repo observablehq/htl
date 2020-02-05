@@ -1,14 +1,32 @@
-export const html = hypertext(string => {
+function renderHtml(string) {
   const template = document.createElement("template");
   template.innerHTML = string;
   return template.content;
-});
+}
 
-export const svg = hypertext(string => {
+function renderSvg(string) {
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.innerHTML = string;
   return g;
-});
+}
+
+export const html = Object.assign(hypertext(renderHtml, fragment => {
+  if (fragment.firstChild === null) return null;
+  if (fragment.firstChild === fragment.lastChild) return fragment.removeChild(fragment.firstChild);
+  const span = document.createElement("span");
+  span.appendChild(fragment);
+  return span;
+}), {fragment: hypertext(renderHtml, fragment => fragment)});
+
+export const svg = Object.assign(hypertext(renderSvg, g => {
+  if (g.firstChild === null) return null;
+  if (g.firstChild === g.lastChild) return g.removeChild(g.firstChild);
+  return g;
+}), {fragment: hypertext(renderSvg, g => {
+  const fragment = document.createDocumentFragment();
+  while (g.firstChild) fragment.appendChild(g.firstChild);
+  return fragment;
+})});
 
 const
 CODE_TAB = 9,
@@ -59,7 +77,7 @@ SHOW_ELEMENT = 1,
 TYPE_COMMENT = 8,
 TYPE_ELEMENT = 1;
 
-function hypertext(render) {
+function hypertext(render, postprocess) {
   return function(strings) {
     let state = STATE_DATA;
     let string = "";
@@ -446,9 +464,7 @@ function hypertext(render) {
       node.parentNode.removeChild(node);
     }
 
-    return root.firstChild === null ? null
-        : root.firstChild === root.lastChild ? root.removeChild(root.firstChild)
-        : root;
+    return postprocess(root);
   };
 }
 
