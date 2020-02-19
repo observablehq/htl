@@ -104,19 +104,19 @@ function hypertext(render) {
                 break;
               }
             }
-            string += (value + "").replace(/^['"]|[\s>]/g, entity);
+            string += (value + "").replace(/^['"]|[\s>&]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_UNQUOTED: {
-            string += (value + "").replace(/[\s>]/g, entity);
+            string += (value + "").replace(/[\s>&]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED: {
-            string += (value + "").replace(/'/g, entity);
+            string += (value + "").replace(/['&]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_DOUBLE_QUOTED: {
-            string += (value + "").replace(/"/g, entity);
+            string += (value + "").replace(/["&]/g, entity);
             break;
           }
           case STATE_BEFORE_ATTRIBUTE_NAME: {
