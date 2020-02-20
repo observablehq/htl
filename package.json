@@ -1,6 +1,6 @@
 {
   "name": "htl",
-  "version": "0.0.9",
+  "version": "0.1.0",
   "description": "Hypertext Literal",
   "main": "dist/htl.js",
   "unpkg": "dist/htl.min.js",
