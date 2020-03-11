@@ -78,7 +78,7 @@ TYPE_COMMENT = 8,
 TYPE_ELEMENT = 1;
 
 function hypertext(render, postprocess) {
-  return function(strings) {
+  return function({raw: strings}) {
     let state = STATE_DATA;
     let string = "";
     let nameStart;
