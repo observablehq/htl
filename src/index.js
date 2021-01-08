@@ -96,7 +96,7 @@ function hypertext(render, postprocess) {
               // ignore
             } else if (value instanceof Node
                 || (typeof value !== "string" && value[Symbol.iterator])
-                || (/(?:^|>)$/.test(strings[j - 1]) && /^(?:<|$)/.test(input))) {
+                || (/(?:^|>)$/.test(strings[j - 1]) && /^(?:<(?!\/textarea)|$)/.test(input))) {
               string += "<!--::" + j + "-->";
               nodeFilter |= SHOW_COMMENT;
             } else {
