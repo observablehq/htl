@@ -16,11 +16,24 @@
     "src/**/*.js"
   ],
   "scripts": {
+    "test": "mkdir -p test/snapshots && tape -r esm -r module-alias/register 'test/**/*-test.js' | tap-dot && eslint src test",
     "prepublishOnly": "rm -rf dist && rollup -c && git push",
     "postpublish": "git push --tags"
   },
+  "_moduleAliases": {
+    "htl": "./src/index.js"
+  },
   "devDependencies": {
+    "eslint": "^7.17.0",
+    "esm": "^3.2.25",
+    "he": "^1.2.0",
+    "js-beautify": "^1.13.1",
+    "jsdom": "^16.4.0",
+    "module-alias": "^2.2.2",
     "rollup": "1",
-    "rollup-plugin-terser": "5"
+    "rollup-plugin-terser": "5",
+    "tap-dot": "^2.0.0",
+    "tape": "^5.1.1",
+    "tape-await": "^0.1.2"
   }
 }
