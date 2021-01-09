@@ -72,6 +72,10 @@ STATE_COMMENT_END_DASH = 22,
 STATE_COMMENT_END = 23,
 STATE_COMMENT_END_BANG = 24,
 STATE_MARKUP_DECLARATION_OPEN = 25,
+STATE_RAWTEXT = 26,
+STATE_RAWTEXT_LESS_THAN_SIGN = 27,
+STATE_RAWTEXT_END_TAG_OPEN = 28,
+STATE_RAWTEXT_END_TAG_NAME = 29,
 SHOW_COMMENT = 128,
 SHOW_ELEMENT = 1,
 TYPE_COMMENT = 8,
@@ -81,8 +85,10 @@ function hypertext(render, postprocess) {
   return function({raw: strings}) {
     let state = STATE_DATA;
     let string = "";
-    let nameStart;
-    let nameEnd;
+    let tagNameStart;
+    let tagNameEnd;
+    let attributeNameStart;
+    let attributeNameEnd;
     let nodeFilter = 0;
 
     for (let j = 0, m = arguments.length; j < m; ++j) {
@@ -91,6 +97,12 @@ function hypertext(render, postprocess) {
       if (j > 0) {
         const value = arguments[j];
         switch (state) {
+          case STATE_RAWTEXT: {
+            if (value != null) {
+              string += (value + "").replace(/[<]/g, entity); // no ampersand!
+            }
+            break;
+          }
           case STATE_DATA: {
             if (value == null) {
               // ignore
@@ -108,14 +120,14 @@ function hypertext(render, postprocess) {
             state = STATE_ATTRIBUTE_VALUE_UNQUOTED;
             if (/^[\s>]/.test(input)) {
               if (value == null || value === false) {
-                string = string.slice(0, nameStart - strings[j - 1].length);
+                string = string.slice(0, attributeNameStart - strings[j - 1].length);
                 break;
               }
               if (value === true) {
                 string += "''";
                 break;
               }
-              const name = strings[j - 1].slice(nameStart, nameEnd);
+              const name = strings[j - 1].slice(attributeNameStart, attributeNameEnd);
               if ((name === "style" && isObjectLiteral(value)) || typeof value === "function") {
                 string += "::" + j;
                 nodeFilter |= SHOW_ELEMENT;
@@ -166,6 +178,7 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_SLASH) {
               state = STATE_END_TAG_OPEN;
             } else if (isAsciiAlphaCode(code)) {
+              tagNameStart = i, tagNameEnd = undefined;
               state = STATE_TAG_NAME, --i;
             } else if (code === CODE_QUESTION) {
               state = STATE_BOGUS_COMMENT, --i;
@@ -176,6 +189,7 @@ function hypertext(render, postprocess) {
           }
           case STATE_END_TAG_OPEN: {
             if (isAsciiAlphaCode(code)) {
+              tagNameStart = i, tagNameEnd = undefined;
               state = STATE_TAG_NAME, --i;
             } else if (code === CODE_GT) {
               state = STATE_DATA;
@@ -187,10 +201,13 @@ function hypertext(render, postprocess) {
           case STATE_TAG_NAME: {
             if (isSpaceCode(code)) {
               state = STATE_BEFORE_ATTRIBUTE_NAME;
+              tagNameEnd = i;
             } else if (code === CODE_SLASH) {
               state = STATE_SELF_CLOSING_START_TAG;
+              tagNameEnd = i;
             } else if (code === CODE_GT) {
-              state = STATE_DATA;
+              tagNameEnd = i;
+              state = textOrData(input, tagNameStart, tagNameEnd);
             }
             break;
           }
@@ -201,20 +218,20 @@ function hypertext(render, postprocess) {
               state = STATE_AFTER_ATTRIBUTE_NAME, --i;
             } else if (code === CODE_EQ) {
               state = STATE_ATTRIBUTE_NAME;
-              nameStart = i + 1, nameEnd = undefined;
+              attributeNameStart = i + 1, attributeNameEnd = undefined;
             } else {
               state = STATE_ATTRIBUTE_NAME, --i;
-              nameStart = i + 1, nameEnd = undefined;
+              attributeNameStart = i + 1, attributeNameEnd = undefined;
             }
             break;
           }
           case STATE_ATTRIBUTE_NAME: {
             if (isSpaceCode(code) || code === CODE_SLASH || code === CODE_GT) {
               state = STATE_AFTER_ATTRIBUTE_NAME, --i;
-              nameEnd = i;
+              attributeNameEnd = i;
             } else if (code === CODE_EQ) {
               state = STATE_BEFORE_ATTRIBUTE_VALUE;
-              nameEnd = i;
+              attributeNameEnd = i;
             }
             break;
           }
@@ -226,10 +243,10 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_EQ) {
               state = STATE_BEFORE_ATTRIBUTE_VALUE;
             } else if (code === CODE_GT) {
-              state = STATE_DATA;
+              state = textOrData(input, tagNameStart, tagNameEnd);
             } else {
               state = STATE_ATTRIBUTE_NAME, --i;
-              nameStart = i + 1, nameEnd = undefined;
+              attributeNameStart = i + 1, attributeNameEnd = undefined;
             }
             break;
           }
@@ -241,7 +258,7 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_SQUOTE) {
               state = STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED;
             } else if (code === CODE_GT) {
-              state = STATE_DATA;
+              state = textOrData(input, tagNameStart, tagNameEnd);
             } else {
               state = STATE_ATTRIBUTE_VALUE_UNQUOTED, --i;
             }
@@ -263,7 +280,7 @@ function hypertext(render, postprocess) {
             if (isSpaceCode(code)) {
               state = STATE_BEFORE_ATTRIBUTE_NAME;
             } else if (code === CODE_GT) {
-              state = STATE_DATA;
+              state = textOrData(input, tagNameStart, tagNameEnd);
             }
             break;
           }
@@ -273,7 +290,7 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_SLASH) {
               state = STATE_SELF_CLOSING_START_TAG;
             } else if (code === CODE_GT) {
-              state = STATE_DATA;
+              state = textOrData(input, tagNameStart, tagNameEnd);
             } else {
               state = STATE_BEFORE_ATTRIBUTE_NAME, --i;
             }
@@ -385,6 +402,41 @@ function hypertext(render, postprocess) {
             }
             break;
           }
+          case STATE_RAWTEXT: {
+            if (code === CODE_LT) {
+              state = STATE_RAWTEXT_LESS_THAN_SIGN;
+            }
+            break;
+          }
+          case STATE_RAWTEXT_LESS_THAN_SIGN: {
+            if (code === CODE_SLASH) {
+              state = STATE_RAWTEXT_END_TAG_OPEN;
+            } else {
+              state = STATE_RAWTEXT, --i;
+            }
+            break;
+          }
+          case STATE_RAWTEXT_END_TAG_OPEN: {
+            if (isAsciiAlphaCode(code)) {
+              state = STATE_RAWTEXT_END_TAG_NAME, --i;
+            } else {
+              state = STATE_RAWTEXT, --i;
+            }
+            break;
+          }
+          case STATE_RAWTEXT_END_TAG_NAME: {
+            const isAppropriateEndTag = true; // TODO match start and end tag
+            if (isSpaceCode(code) && isAppropriateEndTag) {
+              state = STATE_BEFORE_ATTRIBUTE_NAME;
+            } else if (code === CODE_SLASH && isAppropriateEndTag) {
+              state = STATE_SELF_CLOSING_START_TAG;
+            } else if (code === CODE_GT && isAppropriateEndTag) {
+              state = STATE_DATA;
+            } else if (!isAsciiAlphaCode(code)) {
+              state = STATE_RAWTEXT, --i;
+            }
+            break;
+          }
           default: {
             state = undefined;
             break;
@@ -487,4 +539,16 @@ function isSpaceCode(code) {
 
 function isObjectLiteral(value) {
   return value && value.toString === Object.prototype.toString;
+}
+
+function textOrData(input, tagNameStart, tagNameEnd) {
+  if (tagNameStart === undefined) return STATE_DATA;
+  switch (input.slice(tagNameStart, tagNameEnd).toLowerCase()) {
+    case "script": // raw text
+    case "style":
+    case "textarea": // escapable raw text
+    case "title":
+      return STATE_RAWTEXT;
+  }
+  return STATE_DATA;
 }

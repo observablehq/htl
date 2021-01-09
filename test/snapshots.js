@@ -33,33 +33,23 @@ export function interpolatedNumber() {
 }
 
 export function interpolateIntoRawText() {
-  // TODO https://github.com/observablehq/htl/issues/6
-  // return html`<style>p { background-image: url(${"foo.png?bar=1&baz=2"}); }</style>`;
-  return html`<style>p { background-image: url(foo.png?bar=1&baz=2); }</style>`;
+  return html`<style>p { background-image: url(${"foo.png?bar=1&baz=2"}); }</style>`;
 }
 
 export function interpolateIntoScript() {
-  // TODO https://github.com/observablehq/htl/issues/6
-  // return html`<script>${"value"}</script>`;
-  return html`<script>value</script>`;
+  return html`<script>${"value"}</script>`;
 }
 
 export function interpolateIntoStyle() {
-  // TODO https://github.com/observablehq/htl/issues/6
-  // return html`<style>${"value"}</style>`;
-  return html`<style>value</style>`;
+  return html`<style>${"value"}</style>`;
 }
 
 export function interpolateIntoTextarea() {
-  // TODO https://github.com/observablehq/htl/issues/18
-  // return html`<textarea>${"value"}</textarea>`;
-  return html`<textarea>value</textarea>`;
+  return html`<textarea>${"value"}</textarea>`;
 }
 
 export function interpolateIntoTitle() {
-  // TODO https://github.com/observablehq/htl/issues/18
-  // return html`<title>${"value"}</title>`;
-  return html`<title>value</title>`;
+  return html`<title>${"value"}</title>`;
 }
 
 export function interpolatedStyleObject() {
