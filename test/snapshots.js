@@ -32,6 +32,18 @@ export function interpolatedNumber() {
   return html`Hello, ${42}!`;
 }
 
+export function interpolateIntoRawText() {
+  // TODO https://github.com/observablehq/htl/issues/6
+  // return html`<style>p { background-image: url(${"foo.png?bar=1&baz=2"}); }</style>`;
+  return html`<style>p { background-image: url(foo.png?bar=1&baz=2); }</style>`;
+}
+
+export function interpolateIntoTextarea() {
+  // TODO https://github.com/observablehq/htl/issues/18
+  // return html`<textarea>${"value"}</textarea>`;
+  return html`<textarea>value</textarea>`;
+}
+
 export function interpolatedStyleObject() {
   return html`<span style=${{background: "yellow"}}>It’s all yellow!</span>`;
 }
