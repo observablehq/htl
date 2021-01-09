@@ -78,6 +78,22 @@ export function optionalAttribute() {
   return html`<button disabled=${null}>Can click me</button>`;
 }
 
+export function unquotedAttribute() {
+  return html`<font color=${"red"}>`;
+}
+
+export function trailingUnquotedAttribute() {
+  return html`<font color=${"red"}${"blue"}>`;
+}
+
+export function trailingBooleanAttribute() {
+  return html`<font color=${true}${"blue"}>`;
+}
+
+export function escapeUnquotedAttribute() {
+  return html`<font color=${'="red"'}>`;
+}
+
 export function optionalText() {
   return html`There’s no ${null} here.`;
 }
