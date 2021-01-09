@@ -27,7 +27,13 @@ import * as snapshots from "./snapshots.js";
         }
       }
 
-      test.ok(actual === expected, `${name} must match snapshot`);
+      test.ok(actual === expected, `${name} must match snapshot
+<<< ACTUAL
+${actual}
+===
+${expected}
+>>> EXPECTED
+`);
     });
   }
 })();
