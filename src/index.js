@@ -125,12 +125,13 @@ function hypertext(render, postprocess) {
           }
           case STATE_BEFORE_ATTRIBUTE_VALUE: {
             state = STATE_ATTRIBUTE_VALUE_UNQUOTED;
+            let text;
             if (/^[\s>]/.test(input)) {
               if (value == null || value === false) {
                 string = string.slice(0, attributeNameStart - strings[j - 1].length);
                 break;
               }
-              if (value === true) {
+              if (value === true || (text = value + "") === "") {
                 string += "''";
                 break;
               }
@@ -141,7 +142,9 @@ function hypertext(render, postprocess) {
                 break;
               }
             }
-            string += (value + "").replace(/^['"]|[\s>&]/g, entity);
+            if (text === undefined) text = value + "";
+            if (text === "") throw new Error("unsafe unquoted empty string");
+            string += text.replace(/^['"]|[\s>&]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_UNQUOTED: {

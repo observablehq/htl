@@ -100,6 +100,14 @@ export function optionalText() {
   return html`There’s no ${null} here.`;
 }
 
+export function unquotedEmptyString() {
+  return html`<input value=${""} type="input">`;
+}
+
+export function unquotedEmptyStringAfterPrefix() {
+  return html`<input value=prefix${""} type="input">`;
+}
+
 export function interpolatedNull() {
   return html`${html``}`; // It’s nulls all the way down!
 }
