@@ -2,7 +2,7 @@
 
 Hypertext Literal is a tagged template literal for HTML which interpolates values *based on context*, allowing automatic escaping and the interpolation of non-serializable values, such as event listeners, style objects, and other DOM nodes. It is inspired by [lit-html](https://lit-html.polymer-project.org/) and [HTM](https://github.com/developit/htm), and references the fantastically precise [HTML5 spec](https://html.spec.whatwg.org/multipage/parsing.html#tokenization).
 
-Hypertext Literal is open-source, small (2KB), has no dependencies, and is available [on npm](https://www.npmjs.com/package/htl). To install:
+Hypertext Literal is open-sourced under the permissive ISC license, small (2KB), has no dependencies, and is available [on npm](https://www.npmjs.com/package/htl). To install:
 
 ```
 npm install htl
