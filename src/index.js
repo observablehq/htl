@@ -102,7 +102,7 @@ function hypertext(render, postprocess) {
               const text = value + "";
               if (isEscapableRawText(tagName)) {
                 string += text.replace(/[<]/g, entity);
-              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(text)) {
+              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName.length - 2) + text)) {
                 throw new Error("unsafe raw text"); // appropriate end tag
               } else {
                 string += text;
