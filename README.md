@@ -14,7 +14,7 @@ See this README with live examples on Observable:
 
 https://observablehq.com/@observablehq/htl
 
-## Why not concatentate?
+## Why not concatenate?
 
 Surely the simplest way to generate web content is to write [HTML](https://developer.mozilla.org/en-US/docs/Web/HTML). Modern JavaScript makes it easier than ever to interpolate values into literal HTML thanks to [template literals](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals).
 
