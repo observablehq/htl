@@ -60,7 +60,7 @@ If multiple top-level nodes are given, the nodes are implicitly wrapped in a SPA
 html`I’m an <i>implicit</i> span.` // returns a <span> element
 ```
 
-If you’d prefer a [document fragment](https://developer.mozilla.org/en-US/docs/Web/API/DocumentFragment) instead, as when composing hypertext literal fragments, call html.fragment. (Observable doesn’t display fragments because it would dissolve them!)
+If you’d prefer a [document fragment](https://developer.mozilla.org/en-US/docs/Web/API/DocumentFragment) instead, as when composing hypertext literal fragments, call html.fragment.
 
 ```js
 html.fragment`I’m a <i>document fragment</i>.` // returns a DocumentFragment
