@@ -86,7 +86,7 @@ function hypertext(render, postprocess) {
     let state = STATE_DATA;
     let string = "";
     let tagNameStart;
-    let tagNameEnd;
+    let tagName; // beware nesting! used only for rawtext
     let attributeNameStart;
     let attributeNameEnd;
     let nodeFilter = 0;
@@ -99,7 +99,14 @@ function hypertext(render, postprocess) {
         switch (state) {
           case STATE_RAWTEXT: {
             if (value != null) {
-              string += (value + "").replace(/[<]/g, entity); // no ampersand!
+              const text = value + "";
+              if (isEscapableRawText(tagName)) {
+                string += text.replace(/[<]/g, entity);
+              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(text)) {
+                throw new Error("unsafe raw text"); // appropriate end tag
+              } else {
+                string += text;
+              }
             }
             break;
           }
@@ -178,7 +185,7 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_SLASH) {
               state = STATE_END_TAG_OPEN;
             } else if (isAsciiAlphaCode(code)) {
-              tagNameStart = i, tagNameEnd = undefined;
+              tagNameStart = i, tagName = undefined;
               state = STATE_TAG_NAME, --i;
             } else if (code === CODE_QUESTION) {
               state = STATE_BOGUS_COMMENT, --i;
@@ -189,7 +196,6 @@ function hypertext(render, postprocess) {
           }
           case STATE_END_TAG_OPEN: {
             if (isAsciiAlphaCode(code)) {
-              tagNameStart = i, tagNameEnd = undefined;
               state = STATE_TAG_NAME, --i;
             } else if (code === CODE_GT) {
               state = STATE_DATA;
@@ -201,13 +207,12 @@ function hypertext(render, postprocess) {
           case STATE_TAG_NAME: {
             if (isSpaceCode(code)) {
               state = STATE_BEFORE_ATTRIBUTE_NAME;
-              tagNameEnd = i;
+              tagName = input.slice(tagNameStart, i).toLowerCase();
             } else if (code === CODE_SLASH) {
               state = STATE_SELF_CLOSING_START_TAG;
-              tagNameEnd = i;
             } else if (code === CODE_GT) {
-              tagNameEnd = i;
-              state = textOrData(input, tagNameStart, tagNameEnd);
+              tagName = input.slice(tagNameStart, i).toLowerCase();
+              state = isRawText(tagName) ? STATE_RAWTEXT : STATE_DATA;
             }
             break;
           }
@@ -243,7 +248,7 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_EQ) {
               state = STATE_BEFORE_ATTRIBUTE_VALUE;
             } else if (code === CODE_GT) {
-              state = textOrData(input, tagNameStart, tagNameEnd);
+              state = isRawText(tagName) ? STATE_RAWTEXT : STATE_DATA;
             } else {
               state = STATE_ATTRIBUTE_NAME, --i;
               attributeNameStart = i + 1, attributeNameEnd = undefined;
@@ -258,7 +263,7 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_SQUOTE) {
               state = STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED;
             } else if (code === CODE_GT) {
-              state = textOrData(input, tagNameStart, tagNameEnd);
+              state = isRawText(tagName) ? STATE_RAWTEXT : STATE_DATA;
             } else {
               state = STATE_ATTRIBUTE_VALUE_UNQUOTED, --i;
             }
@@ -280,7 +285,7 @@ function hypertext(render, postprocess) {
             if (isSpaceCode(code)) {
               state = STATE_BEFORE_ATTRIBUTE_NAME;
             } else if (code === CODE_GT) {
-              state = textOrData(input, tagNameStart, tagNameEnd);
+              state = isRawText(tagName) ? STATE_RAWTEXT : STATE_DATA;
             }
             break;
           }
@@ -290,7 +295,7 @@ function hypertext(render, postprocess) {
             } else if (code === CODE_SLASH) {
               state = STATE_SELF_CLOSING_START_TAG;
             } else if (code === CODE_GT) {
-              state = textOrData(input, tagNameStart, tagNameEnd);
+              state = isRawText(tagName) ? STATE_RAWTEXT : STATE_DATA;
             } else {
               state = STATE_BEFORE_ATTRIBUTE_NAME, --i;
             }
@@ -541,14 +546,10 @@ function isObjectLiteral(value) {
   return value && value.toString === Object.prototype.toString;
 }
 
-function textOrData(input, tagNameStart, tagNameEnd) {
-  if (tagNameStart === undefined) return STATE_DATA;
-  switch (input.slice(tagNameStart, tagNameEnd).toLowerCase()) {
-    case "script": // raw text
-    case "style":
-    case "textarea": // escapable raw text
-    case "title":
-      return STATE_RAWTEXT;
-  }
-  return STATE_DATA;
+function isRawText(tagName) {
+  return tagName === "script" || tagName === "style" || isEscapableRawText(tagName);
+}
+
+function isEscapableRawText(tagName) {
+  return tagName === "textarea" || tagName === "title";
 }
