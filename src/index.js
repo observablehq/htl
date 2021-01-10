@@ -79,7 +79,86 @@ STATE_RAWTEXT_END_TAG_NAME = 29,
 SHOW_COMMENT = 128,
 SHOW_ELEMENT = 1,
 TYPE_COMMENT = 8,
-TYPE_ELEMENT = 1;
+TYPE_ELEMENT = 1,
+NS_SVG = "http://www.w3.org/2000/svg",
+NS_XLINK = "http://www.w3.org/1999/xlink",
+NS_XML = "http://www.w3.org/XML/1998/namespace",
+NS_XMLNS = "http://www.w3.org/2000/xmlns/";
+
+const svgAdjustAttributes = new Map([
+  "attributeName",
+  "attributeType",
+  "baseFrequency",
+  "baseProfile",
+  "calcMode",
+  "clipPathUnits",
+  "diffuseConstant",
+  "edgeMode",
+  "filterUnits",
+  "glyphRef",
+  "gradientTransform",
+  "gradientUnits",
+  "kernelMatrix",
+  "kernelUnitLength",
+  "keyPoints",
+  "keySplines",
+  "keyTimes",
+  "lengthAdjust",
+  "limitingConeAngle",
+  "markerHeight",
+  "markerUnits",
+  "markerWidth",
+  "maskContentUnits",
+  "maskUnits",
+  "numOctaves",
+  "pathLength",
+  "patternContentUnits",
+  "patternTransform",
+  "patternUnits",
+  "pointsAtX",
+  "pointsAtY",
+  "pointsAtZ",
+  "preserveAlpha",
+  "preserveAspectRatio",
+  "primitiveUnits",
+  "refX",
+  "refY",
+  "repeatCount",
+  "repeatDur",
+  "requiredExtensions",
+  "requiredFeatures",
+  "specularConstant",
+  "specularExponent",
+  "spreadMethod",
+  "startOffset",
+  "stdDeviation",
+  "stitchTiles",
+  "surfaceScale",
+  "systemLanguage",
+  "tableValues",
+  "targetX",
+  "targetY",
+  "textLength",
+  "viewBox",
+  "viewTarget",
+  "xChannelSelector",
+  "yChannelSelector",
+  "zoomAndPan"
+].map(name => [name.toLowerCase(), name]));
+
+const svgForeignAttributes = new Map([
+  ["xlink:actuate", NS_XLINK],
+  ["xlink:arcrole", NS_XLINK],
+  ["xlink:href", NS_XLINK],
+  ["xlink:role", NS_XLINK],
+  ["xlink:show", NS_XLINK],
+  ["xlink:title", NS_XLINK],
+  ["xlink:type", NS_XLINK],
+  ["xml:lang", NS_XML],
+  ["xml:space", NS_XML],
+  ["xmlns", NS_XMLNS],
+  ["xmlns:xlink", NS_XMLNS]
+]);
 
 function hypertext(render, postprocess) {
   return function({raw: strings}) {
@@ -465,10 +544,10 @@ function hypertext(render, postprocess) {
         case TYPE_ELEMENT: {
           const attributes = node.attributes;
           for (let i = 0, n = attributes.length; i < n; ++i) {
-            const attribute = attributes[i];
-            if (/^::/.test(attribute.name)) {
-              const value = arguments[+attribute.name.slice(2)];
-              node.removeAttribute(attribute.name), --i, --n;
+            const {name, value: currentValue} = attributes[i];
+            if (/^::/.test(name)) {
+              const value = arguments[+name.slice(2)];
+              removeAttribute(node, name), --i, --n;
               for (const key in value) {
                 const subvalue = value[key];
                 if (subvalue == null || subvalue === false) {
@@ -478,16 +557,16 @@ function hypertext(render, postprocess) {
                 } else if (key === "style" && isObjectLiteral(subvalue)) {
                   Object.assign(node[key], subvalue);
                 } else {
-                  node.setAttribute(key, subvalue === true ? "" : subvalue);
+                  setAttribute(node, key, subvalue === true ? "" : subvalue);
                 }
               }
-            } else if (/^::/.test(attribute.value)) {
-              const value = arguments[+attribute.value.slice(2)];
-              node.removeAttribute(attribute.name), --i, --n;
+            } else if (/^::/.test(currentValue)) {
+              const value = arguments[+currentValue.slice(2)];
+              removeAttribute(node, name), --i, --n;
               if (typeof value === "function") {
-                node[attribute.name] = value;
+                node[name] = value;
               } else { // style
-                Object.assign(node[attribute.name], value);
+                Object.assign(node[name], value);
               }
             }
           }
@@ -559,4 +638,28 @@ function isEscapableRawText(tagName) {
 
 function lower(input, start, end) {
   return input.slice(start, end).toLowerCase();
+}
+
+function setAttribute(node, name, value) {
+  if (node.namespaceURI === NS_SVG) {
+    name = name.toLowerCase();
+    name = svgAdjustAttributes.get(name) || name;
+    if (svgForeignAttributes.has(name)) {
+      node.setAttributeNS(svgForeignAttributes.get(name), name, value);
+      return;
+    }
+  }
+  node.setAttribute(name, value);
+}
+
+function removeAttribute(node, name) {
+  if (node.namespaceURI === NS_SVG) {
+    name = name.toLowerCase();
+    name = svgAdjustAttributes.get(name) || name;
+    if (svgForeignAttributes.has(name)) {
+      node.removeAttributeNS(svgForeignAttributes.get(name), name);
+      return;
+    }
+  }
+  node.removeAttribute(name);
 }
