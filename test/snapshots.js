@@ -40,6 +40,10 @@ export function interpolateIntoScript() {
   return html`<script>${"value"}</script>`;
 }
 
+export function interpolateIntoRawTextWithNonmatchingEndTag() {
+  return html`<script></style>${"value"}</script>`;
+}
+
 export function escapeIntoRawText() {
   return html`<script>${"1 < 2"}</script>`;
 }

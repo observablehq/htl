@@ -85,8 +85,8 @@ function hypertext(render, postprocess) {
   return function({raw: strings}) {
     let state = STATE_DATA;
     let string = "";
-    let tagNameStart;
-    let tagName; // beware nesting! used only for rawtext
+    let tagNameStart; // either an open tag or an end tag
+    let tagName; // only open; beware nesting! used only for rawtext
     let attributeNameStart;
     let attributeNameEnd;
     let nodeFilter = 0;
@@ -207,11 +207,11 @@ function hypertext(render, postprocess) {
           case STATE_TAG_NAME: {
             if (isSpaceCode(code)) {
               state = STATE_BEFORE_ATTRIBUTE_NAME;
-              tagName = input.slice(tagNameStart, i).toLowerCase();
+              tagName = lower(input, tagNameStart, i);
             } else if (code === CODE_SLASH) {
               state = STATE_SELF_CLOSING_START_TAG;
             } else if (code === CODE_GT) {
-              tagName = input.slice(tagNameStart, i).toLowerCase();
+              tagName = lower(input, tagNameStart, i);
               state = isRawText(tagName) ? STATE_RAWTEXT : STATE_DATA;
             }
             break;
@@ -423,6 +423,7 @@ function hypertext(render, postprocess) {
           }
           case STATE_RAWTEXT_END_TAG_OPEN: {
             if (isAsciiAlphaCode(code)) {
+              tagNameStart = i;
               state = STATE_RAWTEXT_END_TAG_NAME, --i;
             } else {
               state = STATE_RAWTEXT, --i;
@@ -430,12 +431,11 @@ function hypertext(render, postprocess) {
             break;
           }
           case STATE_RAWTEXT_END_TAG_NAME: {
-            const isAppropriateEndTag = true; // TODO match start and end tag
-            if (isSpaceCode(code) && isAppropriateEndTag) {
+            if (isSpaceCode(code) && tagName === lower(input, tagNameStart, i)) {
               state = STATE_BEFORE_ATTRIBUTE_NAME;
-            } else if (code === CODE_SLASH && isAppropriateEndTag) {
+            } else if (code === CODE_SLASH && tagName === lower(input, tagNameStart, i)) {
               state = STATE_SELF_CLOSING_START_TAG;
-            } else if (code === CODE_GT && isAppropriateEndTag) {
+            } else if (code === CODE_GT && tagName === lower(input, tagNameStart, i)) {
               state = STATE_DATA;
             } else if (!isAsciiAlphaCode(code)) {
               state = STATE_RAWTEXT, --i;
@@ -552,4 +552,8 @@ function isRawText(tagName) {
 
 function isEscapableRawText(tagName) {
   return tagName === "textarea" || tagName === "title";
+}
+
+function lower(input, start, end) {
+  return input.slice(start, end).toLowerCase();
 }
