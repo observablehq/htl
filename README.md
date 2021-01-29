@@ -38,7 +38,7 @@ This can be fixed by escaping (say replacing ampersands with the corresponding e
 const html = `My favorite currencies are ${value2.replace(/&/g, "&amp;")}.`;
 ```
 
-Second, concatentation impedes composition: interpolated content must be serialized as markup. You cannot combine literal HTML with content created by the DOM API, or a library such as React or D3. And some content, such as event listeners implemented as closures, can’t be serialized!
+Second, concatenation impedes composition: interpolated content must be serialized as markup. You cannot combine literal HTML with content created by the DOM API, or a library such as React or D3. And some content, such as event listeners implemented as closures, can’t be serialized!
 
 ## Features
 
