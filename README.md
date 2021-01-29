@@ -23,7 +23,7 @@ const value1 = "world";
 const html = `<h1>Hello ${value1}</h1>`;
 ```
 
-Yet simple concatentation has two significant drawbacks.
+Yet simple concatenation has two significant drawbacks.
 
 First, it confounds markup with text and other content. If an interpolated value happens to include characters that are meaningful markup, the result may render unexpectedly. An ampersand (&) can be interpreted as a character entity reference, for instance.
 
