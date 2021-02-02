@@ -1,7 +1,7 @@
 function renderHtml(string) {
   const template = document.createElement("template");
   template.innerHTML = string;
-  return template.content;
+  return document.importNode(template.content, true);
 }
 
 function renderSvg(string) {
