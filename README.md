@@ -192,6 +192,14 @@ Hypertext literal tolerates malformed input—per the HTML5 specification—but 
 html`<${"button"}>Does this work?</>` // Error: invalid binding
 ```
 
+### Use with DOM API
+
+You can put the element (or text node) produced from a literal directly into the DOM: 
+```js
+const subject = "world"
+document.body.appendChild(html`<h1>Hello, ${subject}!</h1>`)
+```
+
 ## How it works
 
 Under the hood, hypertext literal implements a subset of the [HTML5 tokenizer](https://html.spec.whatwg.org/multipage/parsing.html#tokenization) state machine. This allows it to distinguish between tags, attributes, and the like. And so wherever an embedded expression occurs, it can be interpreted correctly.
