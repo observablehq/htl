@@ -194,10 +194,11 @@ html`<${"button"}>Does this work?</>` // Error: invalid binding
 
 ### Use with DOM API
 
-You can put the element (or text node) produced from a literal directly into the DOM: 
+You can put the element (or text node, or fragment) produced from a hypertext literal directly into the DOM:
+
 ```js
-const subject = "world"
-document.body.appendChild(html`<h1>Hello, ${subject}!</h1>`)
+const subject = "world";
+document.body.appendChild(html`<h1>Hello, ${subject}!</h1>`);
 ```
 
 ## How it works
