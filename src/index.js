@@ -555,7 +555,7 @@ function hypertext(render, postprocess) {
                 } else if (typeof subvalue === "function") {
                   node[key] = subvalue;
                 } else if (key === "style" && isObjectLiteral(subvalue)) {
-                  Object.assign(node[key], subvalue);
+                  setStyles(node[key], subvalue);
                 } else {
                   setAttribute(node, key, subvalue === true ? "" : subvalue);
                 }
@@ -566,7 +566,7 @@ function hypertext(render, postprocess) {
               if (typeof value === "function") {
                 node[name] = value;
               } else { // style
-                Object.assign(node[name], value);
+                setStyles(node[name], value);
               }
             }
           }
@@ -662,4 +662,13 @@ function removeAttribute(node, name) {
     }
   }
   node.removeAttribute(name);
+}
+
+// We can’t use Object.assign because custom properties…
+function setStyles(style, values) {
+  for (const name in values) {
+    const value = values[name];
+    if (name.startsWith("--")) style.setProperty(name, value);
+    else style[name] = value;
+  }
 }

@@ -68,6 +68,10 @@ export function interpolatedStyleObject() {
   return html`<span style=${{background: "yellow"}}>It’s all yellow!</span>`;
 }
 
+export function interpolatedStyleObjectWithCustomProperty() {
+  return html`<span style=${{"--custom-property": "yellow"}}>It’s all yellow!</span>`;
+}
+
 export function interpolatedStyleString() {
   return html`<span style="background: ${"yellow; font-style: italic"};">It’s yellow (and italic).</span>`;
 }
