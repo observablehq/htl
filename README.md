@@ -8,8 +8,6 @@ Hypertext Literal is open-sourced under the permissive ISC license, small (2KB),
 npm install htl
 ```
 
-In the near future, we plan to incorporate Hypertext Literal into the [Observable standard library](https://github.com/observablehq/stdlib) as the preferred method of generating HTML and SVG on Observable. Please help us improve by [filing issues](https://github.com/observablehq/htl/issues) and [sharing your feedback](https://talk.observablehq.com).
-
 See this README with live examples on Observable:
 
 https://observablehq.com/@observablehq/htl
