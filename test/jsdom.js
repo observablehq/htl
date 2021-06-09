@@ -1,15 +1,14 @@
 import {JSDOM} from "jsdom";
-import tape from "tape-await";
 
-export default function(description, run) {
-  return tape(description, async test => {
+export default function jsdomit(description, run) {
+  return it(description, async () => {
     try {
       const window = new JSDOM("").window;
       global.document = window.document;
       global.Node = window.Node;
       global.NodeList = window.NodeList;
       global.HTMLCollection = window.HTMLCollection;
-      return await run(test);
+      return await run();
     } finally {
       delete global.document;
       delete global.Node;

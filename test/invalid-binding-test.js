@@ -1,6 +1,7 @@
-import {html} from "htl";
-import tape from "./jsdom.js";
+import assert from "assert";
+import {html} from "../src/index.js";
+import it from "./jsdom.js";
 
-tape("interpolating into a tag name is not allowed", test => {
-  test.throws(() => html`<${"button"}>Does this work?</>`, Error);
+it("interpolating into a tag name is not allowed", () => {
+  assert.throws(() => html`<${"button"}>Does this work?</>`, Error);
 });
