@@ -7,6 +7,7 @@ import it from "./jsdom.js";
 import * as snapshots from "./snapshots.js";
 
 (async () => {
+  await fs.mkdir("./test/snapshots", {recursive: true});
   for (const [name, snapshot] of Object.entries(snapshots)) {
     it(`htl ${name}`, async () => {
       const node = await snapshot();
