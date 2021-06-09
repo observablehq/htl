@@ -1,6 +1,6 @@
 {
   "name": "htl",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "description": "Hypertext Literal",
   "type": "module",
   "main": "src/index.js",
