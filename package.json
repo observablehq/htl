@@ -28,6 +28,7 @@
     "postpublish": "git push --tags"
   },
   "devDependencies": {
+    "@rollup/plugin-json": "4",
     "eslint": "7",
     "he": "1",
     "js-beautify": "1",
