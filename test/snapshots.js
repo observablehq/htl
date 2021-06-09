@@ -1,4 +1,4 @@
-import {html, svg} from "htl";
+import {html, svg} from "../src/index.js";
 
 export function staticNull() {
   return html``;

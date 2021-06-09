@@ -1,18 +1,19 @@
+import assert from "assert";
 import {promises as fs} from "fs";
-import * as path from "path";
-import {html as beautify} from "js-beautify";
-import {encode} from "he";
-import tape from "./jsdom.js";
+import {resolve, basename} from "path";
+import beautify from "js-beautify";
+import he from "he";
+import it from "./jsdom.js";
 import * as snapshots from "./snapshots.js";
 
 (async () => {
   for (const [name, snapshot] of Object.entries(snapshots)) {
-    tape(`htl ${name}`, async test => {
-      const node = await snapshot(test);
+    it(`htl ${name}`, async () => {
+      const node = await snapshot();
       const actual = node === null ? ""
-        : node.nodeType === 3 ? encode(node.textContent)
-        : beautify(node.outerHTML, {indent_size: 2});
-      const outfile = path.resolve("./test/snapshots", `${path.basename(name, ".js")}.html`); // TODO or .svg
+        : node.nodeType === 3 ? he.encode(node.textContent)
+        : beautify.html(node.outerHTML, {indent_size: 2});
+      const outfile = resolve("./test/snapshots", `${basename(name, ".js")}.html`); // TODO or .svg
       let expected;
 
       try {
@@ -27,7 +28,7 @@ import * as snapshots from "./snapshots.js";
         }
       }
 
-      test.ok(actual === expected, `${name} must match snapshot
+      assert(actual === expected, `${name} must match snapshot
 <<< ACTUAL
 ${actual}
 ===

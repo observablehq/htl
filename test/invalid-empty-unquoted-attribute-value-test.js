@@ -1,9 +1,10 @@
-import {html} from "htl";
-import tape from "./jsdom.js";
+import assert from "assert";
+import {html} from "../src/index.js";
+import it from "./jsdom.js";
 
-tape("interpolating an empty string with a suffix is not allowed", test => {
-  test.throws(() => html`<button value=${""}red>`, Error);
-  test.throws(() => html`<button value=${""}${"red"}>`, Error);
-  test.throws(() => html`<button value=${""}${true}>`, Error);
-  test.throws(() => html`<button value=${""}${false}>`, Error);
+it("interpolating an empty string with a suffix is not allowed", () => {
+  assert.throws(() => html`<button value=${""}red>`, Error);
+  assert.throws(() => html`<button value=${""}${"red"}>`, Error);
+  assert.throws(() => html`<button value=${""}${true}>`, Error);
+  assert.throws(() => html`<button value=${""}${false}>`, Error);
 });
