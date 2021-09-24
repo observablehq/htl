@@ -178,7 +178,7 @@ function hypertext(render, postprocess) {
         switch (state) {
           case STATE_RAWTEXT: {
             if (value != null) {
-              const text = value + "";
+              const text = `${value}`;
               if (isEscapableRawText(tagName)) {
                 string += text.replace(/[<]/g, entity);
               } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName.length - 2) + text)) {
@@ -198,7 +198,7 @@ function hypertext(render, postprocess) {
               string += "<!--::" + j + "-->";
               nodeFilter |= SHOW_COMMENT;
             } else {
-              string += (value + "").replace(/[<&]/g, entity);
+              string += `${value}`.replace(/[<&]/g, entity);
             }
             break;
           }
@@ -210,7 +210,7 @@ function hypertext(render, postprocess) {
                 string = string.slice(0, attributeNameStart - strings[j - 1].length);
                 break;
               }
-              if (value === true || (text = value + "") === "") {
+              if (value === true || (text = `${value}`) === "") {
                 string += "''";
                 break;
               }
@@ -221,21 +221,21 @@ function hypertext(render, postprocess) {
                 break;
               }
             }
-            if (text === undefined) text = value + "";
+            if (text === undefined) text = `${value}`;
             if (text === "") throw new Error("unsafe unquoted empty string");
             string += text.replace(/^['"]|[\s>&]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_UNQUOTED: {
-            string += (value + "").replace(/[\s>&]/g, entity);
+            string += `${value}`.replace(/[\s>&]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED: {
-            string += (value + "").replace(/['&]/g, entity);
+            string += `${value}`.replace(/['&]/g, entity);
             break;
           }
           case STATE_ATTRIBUTE_VALUE_DOUBLE_QUOTED: {
-            string += (value + "").replace(/["&]/g, entity);
+            string += `${value}`.replace(/["&]/g, entity);
             break;
           }
           case STATE_BEFORE_ATTRIBUTE_NAME: {
