@@ -5,6 +5,7 @@
   "type": "module",
   "main": "src/index.js",
   "module": "src/index.js",
+  "types": "src/index.d.ts",
   "jsdelivr": "dist/htl.min.js",
   "unpkg": "dist/htl.min.js",
   "exports": {
@@ -19,7 +20,8 @@
   "license": "ISC",
   "files": [
     "dist/**/*.js",
-    "src/**/*.js"
+    "src/**/*.js",
+    "src/**/*.d.ts"
   ],
   "sideEffects": false,
   "scripts": {
