@@ -1,11 +1,17 @@
+let windowObject = globalThis.window;
+
+export function setWindowObject(newWindowObject) {
+  windowObject = newWindowObject;
+}
+
 function renderHtml(string) {
-  const template = document.createElement("template");
+  const template = windowObject.document.createElement("template");
   template.innerHTML = string;
-  return document.importNode(template.content, true);
+  return windowObject.document.importNode(template.content, true);
 }
 
 function renderSvg(string) {
-  const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  const g = windowObject.document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.innerHTML = string;
   return g;
 }
@@ -13,7 +19,7 @@ function renderSvg(string) {
 export const html = Object.assign(hypertext(renderHtml, fragment => {
   if (fragment.firstChild === null) return null;
   if (fragment.firstChild === fragment.lastChild) return fragment.removeChild(fragment.firstChild);
-  const span = document.createElement("span");
+  const span = windowObject.document.createElement("span");
   span.appendChild(fragment);
   return span;
 }), {fragment: hypertext(renderHtml, fragment => fragment)});
@@ -23,7 +29,7 @@ export const svg = Object.assign(hypertext(renderSvg, g => {
   if (g.firstChild === g.lastChild) return g.removeChild(g.firstChild);
   return g;
 }), {fragment: hypertext(renderSvg, g => {
-  const fragment = document.createDocumentFragment();
+  const fragment = windowObject.document.createDocumentFragment();
   while (g.firstChild) fragment.appendChild(g.firstChild);
   return fragment;
 })});
@@ -192,7 +198,7 @@ function hypertext(render, postprocess) {
           case STATE_DATA: {
             if (value == null) {
               // ignore
-            } else if (value instanceof Node
+            } else if (value instanceof windowObject.Node
                 || (typeof value !== "string" && value[Symbol.iterator])
                 || (/(?:^|>)$/.test(strings[j - 1]) && /^(?:<|$)/.test(input))) {
               string += "<!--::" + j + "-->";
@@ -536,7 +542,7 @@ function hypertext(render, postprocess) {
 
     const root = render(string);
 
-    const walker = document.createTreeWalker(root, nodeFilter, null, false);
+    const walker = windowObject.document.createTreeWalker(root, nodeFilter, null, false);
     const removeNodes = [];
     while (walker.nextNode()) {
       const node = walker.currentNode;
@@ -576,21 +582,21 @@ function hypertext(render, postprocess) {
           if (/^::/.test(node.data)) {
             const parent = node.parentNode;
             const value = arguments[+node.data.slice(2)];
-            if (value instanceof Node) {
+            if (value instanceof windowObject.Node) {
               parent.insertBefore(value, node);
             } else if (typeof value !== "string" && value[Symbol.iterator]) {
-              if (value instanceof NodeList || value instanceof HTMLCollection) {
+              if (value instanceof windowObject.NodeList || value instanceof windowObject.HTMLCollection) {
                 for (let i = value.length - 1, r = node; i >= 0; --i) {
                   r = parent.insertBefore(value[i], r);
                 }
               } else {
                 for (const subvalue of value) {
                   if (subvalue == null) continue;
-                  parent.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
+                  parent.insertBefore(subvalue instanceof windowObject.Node ? subvalue : windowObject.document.createTextNode(subvalue), node);
                 }
               }
             } else {
-              parent.insertBefore(document.createTextNode(value), node);
+              parent.insertBefore(windowObject.document.createTextNode(value), node);
             }
             removeNodes.push(node);
           }
