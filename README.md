@@ -75,10 +75,10 @@ html`Look, Ma, ${"<i>automatic escaping</i>"}!`
 html`<font color=${"red"}>This text has color.</font>`
 ```
 
-In cases where it is not possible to interpolate safely, namely with script and style elements where the interpolated value contains the corresponding end tag, an error is thrown.
+In script or style elements where the interpolated value contains the corresponding end tag, the interpolated tag is escaped.
 
 ```js
-html`<script>${"</script>"}</script>` // Error: unsafe raw text
+html`<script>console.log('${"</script>"}')</script>` // <script>console.log('<\/script>')</script>
 ```
 
 ### Styles

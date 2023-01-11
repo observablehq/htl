@@ -4,12 +4,14 @@ export default function jsdomit(description, run) {
   return it(description, async () => {
     try {
       const window = new JSDOM("").window;
+      global.window = window;
       global.document = window.document;
       global.Node = window.Node;
       global.NodeList = window.NodeList;
       global.HTMLCollection = window.HTMLCollection;
       return await run();
     } finally {
+      delete global.window;
       delete global.document;
       delete global.Node;
       delete global.NodeList;

@@ -179,12 +179,23 @@ function hypertext(render, postprocess) {
           case STATE_RAWTEXT: {
             if (value != null) {
               const text = `${value}`;
-              if (isEscapableRawText(tagName)) {
+              if (isEntityEscapableRawText(tagName)) {
                 string += text.replace(/[<]/g, entity);
-              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName.length - 2) + text)) {
-                throw new Error("unsafe raw text"); // appropriate end tag
               } else {
-                string += text;
+                const re = new RegExp(`</(${tagName}[\\s>/])`, "i");
+                const len = tagName.length + 2;
+
+                if (re.test(string.slice(-len) + text)) {
+                  // appropriate end tag
+                  if (isBackslashEscapableRawText(tagName)) {
+                    string = string.slice(0, -len) + (string.slice(-len) + text).replace(re, "<\\/$1");
+                  } else {
+                    // this code path should never be reached
+                    throw new Error("unsafe raw text");
+                  }
+                } else {
+                  string += text;
+                }
               }
             }
             break;
@@ -629,11 +640,15 @@ function isObjectLiteral(value) {
 }
 
 function isRawText(tagName) {
-  return tagName === "script" || tagName === "style" || isEscapableRawText(tagName);
+  return isEntityEscapableRawText(tagName) || isBackslashEscapableRawText(tagName);
 }
 
-function isEscapableRawText(tagName) {
+function isEntityEscapableRawText(tagName) {
   return tagName === "textarea" || tagName === "title";
+}
+
+function isBackslashEscapableRawText(tagName) {
+  return tagName === "script" || tagName === "style";
 }
 
 function lower(input, start, end) {
