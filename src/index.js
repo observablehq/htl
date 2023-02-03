@@ -1,3 +1,11 @@
+function cloneDeep(x) {
+  if (Array.isArray(x) || x instanceof NodeList || x instanceof HTMLCollection) {
+    return [...x].map(cloneDeep);
+  }
+
+  return x instanceof Node ? x.cloneNode(true) : x;
+}
+
 function renderHtml(string) {
   const template = document.createElement("template");
   template.innerHTML = string;
@@ -161,7 +169,9 @@ const svgForeignAttributes = new Map([
 ]);
 
 function hypertext(render, postprocess) {
-  return function({raw: strings}) {
+  return function({raw: strings}, ...substitutions) {
+    const args = [{raw: strings}, ...cloneDeep(substitutions)];
+
     let state = STATE_DATA;
     let string = "";
     let tagNameStart; // either an open tag or an end tag
@@ -170,11 +180,11 @@ function hypertext(render, postprocess) {
     let attributeNameEnd;
     let nodeFilter = 0;
 
-    for (let j = 0, m = arguments.length; j < m; ++j) {
+    for (let j = 0, m = args.length; j < m; ++j) {
       const input = strings[j];
 
       if (j > 0) {
-        const value = arguments[j];
+        const value = args[j];
         switch (state) {
           case STATE_RAWTEXT: {
             if (value != null) {
@@ -546,7 +556,7 @@ function hypertext(render, postprocess) {
           for (let i = 0, n = attributes.length; i < n; ++i) {
             const {name, value: currentValue} = attributes[i];
             if (/^::/.test(name)) {
-              const value = arguments[+name.slice(2)];
+              const value = args[+name.slice(2)];
               removeAttribute(node, name), --i, --n;
               for (const key in value) {
                 const subvalue = value[key];
@@ -561,7 +571,7 @@ function hypertext(render, postprocess) {
                 }
               }
             } else if (/^::/.test(currentValue)) {
-              const value = arguments[+currentValue.slice(2)];
+              const value = args[+currentValue.slice(2)];
               removeAttribute(node, name), --i, --n;
               if (typeof value === "function") {
                 node[name] = value;
@@ -575,7 +585,7 @@ function hypertext(render, postprocess) {
         case TYPE_COMMENT: {
           if (/^::/.test(node.data)) {
             const parent = node.parentNode;
-            const value = arguments[+node.data.slice(2)];
+            const value = args[+node.data.slice(2)];
             if (value instanceof Node) {
               parent.insertBefore(value, node);
             } else if (typeof value !== "string" && value[Symbol.iterator]) {
