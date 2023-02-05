@@ -154,6 +154,28 @@ function emphasize(text) {
 html`This is ${emphasize("really")} important.`
 ```
 
+Note that interpolated nodes are not cloned, which means that if you try to interpolate the same (reference-equal) node more than once, only the last interpolation will be rendered. To get around this limitation, you can return a new node from a function or call [`Node#cloneNode(true)`](https://developer.mozilla.org/en-US/docs/Web/API/Node/cloneNode) on the result:
+
+```js
+// this won't work
+const em = html`<span class="asterisk">*`
+function emphasize(text) {
+  return html`${em}${text}${em}`;
+}
+
+// do this instead
+const em = () => html`<span class="asterisk">*`
+function emphasize(text) {
+  return html`${em()}${text}${em()}`;
+}
+
+// ...or this
+const em = html`<span class="asterisk">*`
+function emphasize(text) {
+  return html`${em.cloneNode(true)}${text}${em.cloneNode(true)}`;
+}
+```
+
 ### Iterable values
 
 You can interpolate iterables into data, too, even iterables of nodes. This is useful for mapping data to content via [*array*.map](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map) or [Array.from](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/from). Typically, you should use html.fragment for the embedded expressions.
