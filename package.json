@@ -24,7 +24,7 @@
   "scripts": {
     "build": "tsc",
     "test": "mocha --experimental-specifier-resolution=node",
-    "lint": "eslint . --ext .ts",
+    "lint": "eslint .",
     "prepublishOnly": "rm -rf dist && rollup -c && git push",
     "postpublish": "git push --tags"
   },
@@ -34,6 +34,7 @@
     "@types/js-beautify": "^1.13.3",
     "@types/jsdom": "^21.1.0",
     "@types/mocha": "^10.0.1",
+    "@types/node": "^18.13.0",
     "@typescript-eslint/eslint-plugin": "^5.51.0",
     "@typescript-eslint/parser": "^5.51.0",
     "eslint": "^8.34.0",
@@ -44,13 +45,11 @@
     "rollup": "2",
     "rollup-plugin-terser": "7",
     "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.1",
     "tslib": "^2.5.0",
     "typescript": "^4.9.5"
   },
   "engines": {
     "node": ">=12"
-  },
-  "dependencies": {
-    "ts-node": "^10.9.1"
   }
 }

@@ -1,5 +1,5 @@
 {
-  "extends": "eslint:recommended",
+  "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "sourceType": "module",
@@ -13,12 +13,16 @@
   "plugins": [
     "@typescript-eslint"
   ],
+  "ignorePatterns": ["*.js"],
   "root": true,
   "rules": {
     "no-cond-assign": 0,
     "no-constant-condition": 0,
     "no-unexpected-multiline": 0,
     "comma-dangle": ["error", "never"],
-    "semi": [2, "always"]
+    "semi": [2, "always"],
+    // TODO: Remove these rules
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-explicit-any": "off"
   }
 }

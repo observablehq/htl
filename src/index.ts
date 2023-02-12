@@ -174,6 +174,7 @@ function hypertext(render: any, postprocess: any) {
       const input = strings[j];
 
       if (j > 0) {
+        // eslint-disable-next-line prefer-rest-params
         const value = arguments[j];
         switch (state) {
           case STATE_RAWTEXT: {
@@ -548,6 +549,7 @@ function hypertext(render: any, postprocess: any) {
           for (let i = 0, n = attributes.length; i < n; ++i) {
             const {name, value: currentValue} = attributes[i];
             if (/^::/.test(name)) {
+              // eslint-disable-next-line prefer-rest-params
               const value = arguments[+name.slice(2)];
               removeAttribute(node, name), --i, --n;
               for (const key in value) {
@@ -565,6 +567,7 @@ function hypertext(render: any, postprocess: any) {
                 }
               }
             } else if (/^::/.test(currentValue)) {
+              // eslint-disable-next-line prefer-rest-params
               const value = arguments[+currentValue.slice(2)];
               removeAttribute(node, name), --i, --n;
               if (typeof value === "function") {
@@ -581,8 +584,10 @@ function hypertext(render: any, postprocess: any) {
         case TYPE_COMMENT: {
           // @ts-ignore
           if (/^::/.test(node.data)) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const parent = node.parentNode!;
             // @ts-ignore
+            // eslint-disable-next-line prefer-rest-params
             const value = arguments[+node.data.slice(2)];
             if (value instanceof Node) {
               parent.insertBefore(value, node);
@@ -608,6 +613,7 @@ function hypertext(render: any, postprocess: any) {
     }
 
     for (const node of removeNodes) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       node.parentNode!.removeChild(node);
     }
 
