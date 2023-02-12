@@ -1,5 +1,6 @@
 {
   "extends": "eslint:recommended",
+  "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "sourceType": "module",
     "ecmaVersion": 2020
@@ -9,6 +10,10 @@
     "node": true,
     "browser": true
   },
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "root": true,
   "rules": {
     "no-cond-assign": 0,
     "no-constant-condition": 0,

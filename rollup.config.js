@@ -1,5 +1,6 @@
 import {readFileSync} from "fs";
 import json from "@rollup/plugin-json";
+import typescript from '@rollup/plugin-typescript';
 import {terser} from "rollup-plugin-terser";
 import * as meta from "./package.json";
 
@@ -11,7 +12,7 @@ const copyright = readFileSync("./LICENSE", "utf-8")
   .join(", ");
 
 const config = {
-  input: "bundle.js",
+  input: "bundle.ts",
   output: {
     file: `dist/${meta.name}.js`,
     name: "htl",
@@ -21,7 +22,10 @@ const config = {
     banner: `// ${meta.homepage} v${meta.version} Copyright ${copyright}`
   },
   plugins: [
-    json()
+    json(),
+    typescript({
+      resolveJsonModule: true
+    })
   ]
 };
 

@@ -1,6 +1,7 @@
 import {JSDOM} from "jsdom";
+import {it} from "mocha";
 
-export default function jsdomit(description, run) {
+export default function jsdomit(description: any, run: any) {
   return it(description, async () => {
     try {
       const window = new JSDOM("").window;
@@ -10,9 +11,13 @@ export default function jsdomit(description, run) {
       global.HTMLCollection = window.HTMLCollection;
       return await run();
     } finally {
+      // @ts-ignore
       delete global.document;
+      // @ts-ignore
       delete global.Node;
+      // @ts-ignore
       delete global.NodeList;
+      // @ts-ignore
       delete global.HTMLCollection;
     }
   });
