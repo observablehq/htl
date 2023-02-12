@@ -26,6 +26,7 @@
     "build": "tsc",
     "test": "mocha --experimental-specifier-resolution=node",
     "lint": "eslint .",
+    "fix": "eslint --fix .",
     "prepublishOnly": "rm -rf dist && rollup -c && git push",
     "postpublish": "git push --tags"
   },
