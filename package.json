@@ -4,6 +4,7 @@
   "description": "Hypertext Literal",
   "type": "module",
   "main": "src/index.js",
+  "module": "src/index.js",
   "jsdelivr": "dist/htl.min.js",
   "unpkg": "dist/htl.min.js",
   "exports": {
