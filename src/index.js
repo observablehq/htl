@@ -189,6 +189,22 @@ function hypertext(render, postprocess) {
             }
             break;
           }
+          case STATE_TAG_OPEN: {
+            const text = `${value}`;
+            if (!isValidTagName(text)) throw new Error("invalid tag name");
+            string += text;
+            tagName = text.toLowerCase();
+            state = STATE_BEFORE_ATTRIBUTE_NAME;
+            break;
+          }
+          case STATE_END_TAG_OPEN: {
+            const text = `${value}`;
+            if (!isValidTagName(text)) throw new Error("invalid tag name");
+            string += text;
+            tagName = text.toLowerCase();
+            state = STATE_BEFORE_ATTRIBUTE_NAME;
+            break;
+          }
           case STATE_DATA: {
             if (value == null) {
               // ignore
@@ -622,6 +638,10 @@ function isSpaceCode(code) {
       || code === CODE_FF
       || code === CODE_SPACE
       || code === CODE_CR; // normalize newlines
+}
+
+function isValidTagName(name) {
+  return /^[a-zA-Z][a-zA-Z0-9-]*$/.test(name);
 }
 
 function isObjectLiteral(value) {
