@@ -243,10 +243,10 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
               nodeFilter |= SHOW_ELEMENT;
               break;
             }
-            throw new Error("invalid binding");
+            throw new Error("interpolated attributes must be specified as {[name]: value} literal"); // TODO relax
           }
           case STATE_COMMENT: break;
-          default: throw new Error("invalid binding");
+          default: throw new Error("tag name cannot be interpolated");
         }
       }
 
