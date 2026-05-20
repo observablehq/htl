@@ -1,2 +1,2 @@
-src/index.js
+src/index.ts
 test/snapshots.test.js

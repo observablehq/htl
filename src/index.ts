@@ -1,28 +1,28 @@
-function renderHtml(string) {
+function renderHtml(string: string): DocumentFragment {
   const template = document.createElement("template");
   template.innerHTML = string;
   return document.importNode(template.content, true);
 }
 
-function renderSvg(string) {
+function renderSvg(string: string): SVGGElement {
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.innerHTML = string;
   return g;
 }
 
-export const html = Object.assign(hypertext(renderHtml, fragment => {
+export const html = Object.assign(hypertext(renderHtml, (fragment): Node | null => {
   if (fragment.firstChild === null) return null;
   if (fragment.firstChild === fragment.lastChild) return fragment.removeChild(fragment.firstChild);
   const span = document.createElement("span");
   span.appendChild(fragment);
   return span;
-}), {fragment: hypertext(renderHtml, fragment => fragment)});
+}), {fragment: hypertext(renderHtml, (fragment) => fragment)});
 
-export const svg = Object.assign(hypertext(renderSvg, g => {
+export const svg = Object.assign(hypertext(renderSvg, (g): Node | null => {
   if (g.firstChild === null) return null;
   if (g.firstChild === g.lastChild) return g.removeChild(g.firstChild);
   return g;
-}), {fragment: hypertext(renderSvg, g => {
+}), {fragment: hypertext(renderSvg, (g): DocumentFragment => {
   const fragment = document.createDocumentFragment();
   while (g.firstChild) fragment.appendChild(g.firstChild);
   return fragment;
@@ -144,7 +144,7 @@ const svgAdjustAttributes = new Map([
   "xChannelSelector",
   "yChannelSelector",
   "zoomAndPan"
-].map(name => [name.toLowerCase(), name]));
+].map((name) => [name.toLowerCase(), name]));
 
 const svgForeignAttributes = new Map([
   ["xlink:actuate", NS_XLINK],
@@ -160,28 +160,28 @@ const svgForeignAttributes = new Map([
   ["xmlns:xlink", NS_XMLNS]
 ]);
 
-function hypertext(render, postprocess) {
-  return function({raw: strings}) {
-    let state = STATE_DATA;
+function hypertext<T extends Node, S>(render: (input: string) => T, postprocess: (output: T) => S) {
+  return function({raw: strings}: TemplateStringsArray, ...values: unknown[]) {
+    let state: number | undefined = STATE_DATA;
     let string = "";
-    let tagNameStart; // either an open tag or an end tag
-    let tagName; // only open; beware nesting! used only for rawtext
-    let attributeNameStart;
-    let attributeNameEnd;
+    let tagNameStart: number | undefined; // either an open tag or an end tag
+    let tagName: string | undefined; // only open; beware nesting! used only for rawtext
+    let attributeNameStart: number | undefined;
+    let attributeNameEnd: number | undefined;
     let nodeFilter = 0;
 
-    for (let j = 0, m = arguments.length; j < m; ++j) {
+    for (let j = 0, m = values.length; j < m; ++j) {
       const input = strings[j];
 
       if (j > 0) {
-        const value = arguments[j];
+        const value = values[j];
         switch (state) {
           case STATE_RAWTEXT: {
             if (value != null) {
               const text = `${value}`;
               if (isEscapableRawText(tagName)) {
                 string += text.replace(/[<]/g, entity);
-              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName.length - 2) + text)) {
+              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName!.length - 2) + text)) {
                 throw new Error(`cannot interpolate </${tagName}> into <${tagName}>`);
               } else {
                 string += text;
@@ -207,7 +207,7 @@ function hypertext(render, postprocess) {
             let text;
             if (/^[\s>]/.test(input)) {
               if (value == null || value === false) {
-                string = string.slice(0, attributeNameStart - strings[j - 1].length);
+                string = string.slice(0, attributeNameStart! - strings[j - 1].length);
                 break;
               }
               if (value === true || (text = `${value}`) === "") {
@@ -535,37 +535,37 @@ function hypertext(render, postprocess) {
 
     const root = render(string);
 
-    const walker = document.createTreeWalker(root, nodeFilter, null, false);
+    const walker = document.createTreeWalker(root, nodeFilter, null);
     const removeNodes = [];
     while (walker.nextNode()) {
       const node = walker.currentNode;
       switch (node.nodeType) {
         case TYPE_ELEMENT: {
-          const attributes = node.attributes;
+          const attributes = (node as Element).attributes;
           for (let i = 0, n = attributes.length; i < n; ++i) {
             const {name, value: currentValue} = attributes[i];
             if (/^::/.test(name)) {
-              const value = arguments[+name.slice(2)];
+              const value = values[+name.slice(2)] as Record<string, unknown>;
               removeAttribute(node, name), --i, --n;
               for (const key in value) {
                 const subvalue = value[key];
                 if (subvalue == null || subvalue === false) {
                   // ignore
                 } else if (typeof subvalue === "function") {
-                  node[key] = subvalue;
+                  (node as any)[key] = subvalue;
                 } else if (key === "style" && isObjectLiteral(subvalue)) {
-                  setStyles(node[key], subvalue);
+                  setStyles((node as HTMLElement)[key], subvalue);
                 } else {
                   setAttribute(node, key, subvalue === true ? "" : subvalue);
                 }
               }
             } else if (/^::/.test(currentValue)) {
-              const value = arguments[+currentValue.slice(2)];
+              const value = values[+currentValue.slice(2)];
               removeAttribute(node, name), --i, --n;
               if (typeof value === "function") {
-                node[name] = value;
+                (node as any)[name] = value;
               } else { // style
-                setStyles(node[name], value);
+                setStyles((node as HTMLElement)[name], value); // TODO seems wrong?
               }
             }
           }
@@ -574,22 +574,22 @@ function hypertext(render, postprocess) {
         case TYPE_COMMENT: {
           if (/^::/.test(node.data)) {
             const parent = node.parentNode;
-            const value = arguments[+node.data.slice(2)];
+            const value = values[+node.data.slice(2)];
             if (value instanceof Node) {
-              parent.insertBefore(value, node);
+              parent!.insertBefore(value, node);
             } else if (typeof value !== "string" && value[Symbol.iterator]) {
               if (value instanceof NodeList || value instanceof HTMLCollection) {
                 for (let i = value.length - 1, r = node; i >= 0; --i) {
-                  r = parent.insertBefore(value[i], r);
+                  r = parent!.insertBefore(value[i], r);
                 }
               } else {
                 for (const subvalue of value) {
                   if (subvalue == null) continue;
-                  parent.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
+                  parent!.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
                 }
               }
             } else {
-              parent.insertBefore(document.createTextNode(value), node);
+              parent!.insertBefore(document.createTextNode(value), node);
             }
             removeNodes.push(node);
           }
@@ -599,23 +599,23 @@ function hypertext(render, postprocess) {
     }
 
     for (const node of removeNodes) {
-      node.parentNode.removeChild(node);
+      node.parentNode!.removeChild(node);
     }
 
     return postprocess(root);
   };
 }
 
-function entity(character) {
+function entity(character: string): string {
   return `&#${character.charCodeAt(0).toString()};`;
 }
 
-function isAsciiAlphaCode(code) {
+function isAsciiAlphaCode(code: number): boolean {
   return (CODE_UPPER_A <= code && code <= CODE_UPPER_Z)
       || (CODE_LOWER_A <= code && code <= CODE_LOWER_Z);
 }
 
-function isSpaceCode(code) {
+function isSpaceCode(code: number): boolean {
   return code === CODE_TAB
       || code === CODE_LF
       || code === CODE_FF
@@ -623,40 +623,40 @@ function isSpaceCode(code) {
       || code === CODE_CR; // normalize newlines
 }
 
-function isObjectLiteral(value) {
+function isObjectLiteral(value: unknown): boolean {
   return value && value.toString === Object.prototype.toString;
 }
 
-function isRawText(tagName) {
+function isRawText(tagName: string): tagName is "script" | "style" | "textarea" | "title" {
   return tagName === "script" || tagName === "style" || isEscapableRawText(tagName);
 }
 
-function isEscapableRawText(tagName) {
+function isEscapableRawText(tagName: string): tagName is "textarea" | "title" {
   return tagName === "textarea" || tagName === "title";
 }
 
-function lower(input, start, end) {
+function lower(input: string, start?: number, end?: number): string {
   return input.slice(start, end).toLowerCase();
 }
 
-function setAttribute(node, name, value) {
+function setAttribute(node: Element, name: string, value: string): void {
   if (node.namespaceURI === NS_SVG) {
     name = name.toLowerCase();
     name = svgAdjustAttributes.get(name) || name;
     if (svgForeignAttributes.has(name)) {
-      node.setAttributeNS(svgForeignAttributes.get(name), name, value);
+      node.setAttributeNS(svgForeignAttributes.get(name)!, name, value);
       return;
     }
   }
   node.setAttribute(name, value);
 }
 
-function removeAttribute(node, name) {
+function removeAttribute(node: Element, name: string): void {
   if (node.namespaceURI === NS_SVG) {
     name = name.toLowerCase();
     name = svgAdjustAttributes.get(name) || name;
     if (svgForeignAttributes.has(name)) {
-      node.removeAttributeNS(svgForeignAttributes.get(name), name);
+      node.removeAttributeNS(svgForeignAttributes.get(name)!, name);
       return;
     }
   }
@@ -664,10 +664,10 @@ function removeAttribute(node, name) {
 }
 
 // We can’t use Object.assign because custom properties…
-function setStyles(style, values) {
+function setStyles(style: CSSStyleDeclaration, values: Record<string, string>): void {
   for (const name in values) {
     const value = values[name];
     if (name.startsWith("--")) style.setProperty(name, value);
-    else style[name] = value;
+    else (style as any)[name] = value;
   }
 }
