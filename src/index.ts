@@ -203,8 +203,8 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
             break;
           }
           case STATE_TAG_OPEN:
-          case STATE_RAWTEXT_END_TAG_OPEN:
-          case STATE_END_TAG_OPEN: {
+          case STATE_END_TAG_OPEN:
+          case STATE_RAWTEXT_END_TAG_OPEN: {
             const text = `${value}`;
             if (!isValidTagName(text)) throw new Error(`invalid tag name: ${value}`);
             string += text;
