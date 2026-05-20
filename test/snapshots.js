@@ -100,6 +100,38 @@ export function escapeUnquotedAttribute() {
   return html`<font color=${'="red"'}>`;
 }
 
+export function emptyUnquotedAttributeSuffix() {
+  return html`<button value=${""}suffix>`;
+}
+
+export function emptyUnquotedAttributePrefix() {
+  return html`<button value=prefix${""}>`;
+}
+
+export function emptyUnquotedAttributePrefixSuffix() {
+  return html`<button value=prefix${""}suffix>`;
+}
+
+export function emptyUnquotedAttributeMultiple() {
+  return html`<button value=${""}${""}>`;
+}
+
+export function emptyUnquotedAttributeTrueSuffix() {
+  return html`<button value=${""}${true}>`;
+}
+
+export function emptyUnquotedAttributeFalseSuffix() {
+  return html`<button value=${""}${true}>`;
+}
+
+export function emptyUnquotedAttributeTruePrefix() {
+  return html`<button value=${true}${""}>`;
+}
+
+export function emptyUnquotedAttributeFalsePrefix() {
+  return html`<button value=${true}${""}>`;
+}
+
 export function optionalText() {
   return html`There’s no ${null} here.`;
 }

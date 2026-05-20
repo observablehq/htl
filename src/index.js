@@ -182,7 +182,7 @@ function hypertext(render, postprocess) {
               if (isEscapableRawText(tagName)) {
                 string += text.replace(/[<]/g, entity);
               } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName.length - 2) + text)) {
-                throw new Error("unsafe raw text"); // appropriate end tag
+                throw new Error(`unsafe raw text contains </${tagName}>`); // appropriate end tag
               } else {
                 string += text;
               }
@@ -222,7 +222,6 @@ function hypertext(render, postprocess) {
               }
             }
             if (text === undefined) text = `${value}`;
-            if (text === "") throw new Error("unsafe unquoted empty string");
             string += text.replace(/^['"]|[\s>&]/g, entity);
             break;
           }
