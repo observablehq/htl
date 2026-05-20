@@ -579,9 +579,9 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
               const value = values[+currentValue.slice(2)];
               removeAttribute(element, name), --i, --n;
               if (typeof value === "function") {
-                (element as any)[name] = value;
+                (element as any)[name] = value; // eslint-disable-line @typescript-eslint/no-explicit-any
               } else { // style
-                setStyles((element as HTMLElement)[name], value as Record<string, unknown>); // TODO seems wrong?
+                setStyles((element as any)[name], value as Record<string, unknown>); // eslint-disable-line @typescript-eslint/no-explicit-any
               }
             }
           }
@@ -781,6 +781,6 @@ function setStyles(style: CSSStyleDeclaration, values: Record<string, unknown>):
   for (const name in values) {
     const value = values[name];
     if (name.startsWith("--")) style.setProperty(name, value as string);
-    else (style as any)[name] = value;
+    else (style as any)[name] = value; // eslint-disable-line @typescript-eslint/no-explicit-any
   }
 }
