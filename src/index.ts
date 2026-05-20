@@ -1,28 +1,28 @@
-function renderHtml(string) {
+function renderHtml(string: string): DocumentFragment {
   const template = document.createElement("template");
   template.innerHTML = string;
   return document.importNode(template.content, true);
 }
 
-function renderSvg(string) {
+function renderSvg(string: string): SVGGElement {
   const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
   g.innerHTML = string;
   return g;
 }
 
-export const html = Object.assign(hypertext(renderHtml, fragment => {
+export const html = Object.assign(hypertext(renderHtml, (fragment): Node | null => {
   if (fragment.firstChild === null) return null;
   if (fragment.firstChild === fragment.lastChild) return fragment.removeChild(fragment.firstChild);
   const span = document.createElement("span");
   span.appendChild(fragment);
   return span;
-}), {fragment: hypertext(renderHtml, fragment => fragment)});
+}), {fragment: hypertext(renderHtml, (fragment) => fragment)});
 
-export const svg = Object.assign(hypertext(renderSvg, g => {
+export const svg = Object.assign(hypertext(renderSvg, (g): Node | null => {
   if (g.firstChild === null) return null;
   if (g.firstChild === g.lastChild) return g.removeChild(g.firstChild);
   return g;
-}), {fragment: hypertext(renderSvg, g => {
+}), {fragment: hypertext(renderSvg, (g): DocumentFragment => {
   const fragment = document.createDocumentFragment();
   while (g.firstChild) fragment.appendChild(g.firstChild);
   return fragment;
@@ -144,7 +144,7 @@ const svgAdjustAttributes = new Map([
   "xChannelSelector",
   "yChannelSelector",
   "zoomAndPan"
-].map(name => [name.toLowerCase(), name]));
+].map((name) => [name.toLowerCase(), name]));
 
 const svgForeignAttributes = new Map([
   ["xlink:actuate", NS_XLINK],
@@ -160,29 +160,29 @@ const svgForeignAttributes = new Map([
   ["xmlns:xlink", NS_XMLNS]
 ]);
 
-function hypertext(render, postprocess) {
-  return function({raw: strings}) {
-    let state = STATE_DATA;
+function hypertext<T extends Node, S>(render: (input: string) => T, postprocess: (output: T) => S) {
+  return ({raw: strings}: TemplateStringsArray, ...values: unknown[]) => {
+    let state: number | undefined = STATE_DATA;
     let string = "";
-    let tagNameStart; // either an open tag or an end tag
-    let tagName; // only open; beware nesting! used only for rawtext
-    let attributeNameStart;
-    let attributeNameEnd;
+    let tagNameStart: number | undefined; // either an open tag or an end tag
+    let tagName: string | undefined; // only open; beware nesting! used only for rawtext
+    let attributeNameStart: number | undefined;
+    let attributeNameEnd: number | undefined;
     let nodeFilter = 0;
 
-    for (let j = 0, m = arguments.length; j < m; ++j) {
-      const input = strings[j];
+    for (let j = -1, m = values.length; j < m; ++j) {
+      const input = strings[j + 1];
 
-      if (j > 0) {
-        const value = arguments[j];
+      if (j >= 0) {
+        const value = values[j];
         switch (state) {
           case STATE_RAWTEXT: {
             if (value != null) {
               const text = `${value}`;
               if (isEscapableRawText(tagName)) {
                 string += text.replace(/[<]/g, entity);
-              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName.length - 2) + text)) {
-                throw new Error("unsafe raw text"); // appropriate end tag
+              } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName!.length - 2) + text)) {
+                throw new Error(`cannot interpolate </${tagName}> into <${tagName}>`);
               } else {
                 string += text;
               }
@@ -193,13 +193,23 @@ function hypertext(render, postprocess) {
             if (value == null) {
               // ignore
             } else if (value instanceof Node
-                || (typeof value !== "string" && value[Symbol.iterator])
-                || (/(?:^|>)$/.test(strings[j - 1]) && /^(?:<|$)/.test(input))) {
-              string += "<!--::" + j + "-->";
+                || (typeof value !== "string" && isIterable(value))
+                || (/(?:^|>)$/.test(strings[j]) && /^(?:<|$)/.test(input))) {
+              string += `<!--::${j}-->`;
               nodeFilter |= SHOW_COMMENT;
             } else {
               string += `${value}`.replace(/[<&]/g, entity);
             }
+            break;
+          }
+          case STATE_TAG_OPEN:
+          case STATE_END_TAG_OPEN:
+          case STATE_RAWTEXT_END_TAG_OPEN: {
+            const text = `${value}`;
+            if (!isValidTagName(text)) throw new Error(`invalid tag name: ${value}`);
+            string += text;
+            tagName = text.toLowerCase();
+            state = STATE_BEFORE_ATTRIBUTE_NAME;
             break;
           }
           case STATE_BEFORE_ATTRIBUTE_VALUE: {
@@ -207,22 +217,21 @@ function hypertext(render, postprocess) {
             let text;
             if (/^[\s>]/.test(input)) {
               if (value == null || value === false) {
-                string = string.slice(0, attributeNameStart - strings[j - 1].length);
+                string = string.slice(0, attributeNameStart! - strings[j].length);
                 break;
               }
               if (value === true || (text = `${value}`) === "") {
                 string += "''";
                 break;
               }
-              const name = strings[j - 1].slice(attributeNameStart, attributeNameEnd);
+              const name = strings[j].slice(attributeNameStart, attributeNameEnd);
               if ((name === "style" && isObjectLiteral(value)) || typeof value === "function") {
-                string += "::" + j;
+                string += `::${j}`;
                 nodeFilter |= SHOW_ELEMENT;
                 break;
               }
             }
             if (text === undefined) text = `${value}`;
-            if (text === "") throw new Error("unsafe unquoted empty string");
             string += text.replace(/^['"]|[\s>&]/g, entity);
             break;
           }
@@ -240,14 +249,19 @@ function hypertext(render, postprocess) {
           }
           case STATE_BEFORE_ATTRIBUTE_NAME: {
             if (isObjectLiteral(value)) {
-              string += "::" + j + "=''";
+              string += `::${j}=''`;
               nodeFilter |= SHOW_ELEMENT;
               break;
             }
-            throw new Error("invalid binding");
+            const text = `${value}`;
+            if (isAttributeString(text)) {
+              string += text;
+              break;
+            }
+            throw new Error("interpolated attribute name contains bare '>'");
           }
           case STATE_COMMENT: break;
-          default: throw new Error("invalid binding");
+          default: throw new Error(`cannot interpolate in state ${state}`);
         }
       }
 
@@ -536,63 +550,65 @@ function hypertext(render, postprocess) {
 
     const root = render(string);
 
-    const walker = document.createTreeWalker(root, nodeFilter, null, false);
-    const removeNodes = [];
+    const walker = document.createTreeWalker(root, nodeFilter, null);
+    const removeNodes: Node[] = [];
     while (walker.nextNode()) {
       const node = walker.currentNode;
       switch (node.nodeType) {
         case TYPE_ELEMENT: {
-          const attributes = node.attributes;
+          const element = node as Element;
+          const attributes = element.attributes;
           for (let i = 0, n = attributes.length; i < n; ++i) {
             const {name, value: currentValue} = attributes[i];
             if (/^::/.test(name)) {
-              const value = arguments[+name.slice(2)];
-              removeAttribute(node, name), --i, --n;
+              const value = values[+name.slice(2)] as Record<string, unknown>;
+              removeAttribute(element, name), --i, --n;
               for (const key in value) {
                 const subvalue = value[key];
                 if (subvalue == null || subvalue === false) {
                   // ignore
                 } else if (typeof subvalue === "function") {
-                  node[key] = subvalue;
+                  (element as HTMLElement)[key as "onclick"] = subvalue as () => void;
                 } else if (key === "style" && isObjectLiteral(subvalue)) {
-                  setStyles(node[key], subvalue);
+                  setStyles((element as HTMLElement)[key], subvalue);
                 } else {
-                  setAttribute(node, key, subvalue === true ? "" : subvalue);
+                  setAttribute(element, key, subvalue === true ? "" : subvalue as string);
                 }
               }
             } else if (/^::/.test(currentValue)) {
-              const value = arguments[+currentValue.slice(2)];
-              removeAttribute(node, name), --i, --n;
+              const value = values[+currentValue.slice(2)];
+              removeAttribute(element, name), --i, --n;
               if (typeof value === "function") {
-                node[name] = value;
+                (element as any)[name] = value; // eslint-disable-line @typescript-eslint/no-explicit-any
               } else { // style
-                setStyles(node[name], value);
+                setStyles((element as any)[name], value as Record<string, unknown>); // eslint-disable-line @typescript-eslint/no-explicit-any
               }
             }
           }
           break;
         }
         case TYPE_COMMENT: {
-          if (/^::/.test(node.data)) {
-            const parent = node.parentNode;
-            const value = arguments[+node.data.slice(2)];
+          const comment = node as Comment;
+          if (/^::/.test(comment.data)) {
+            const parent = comment.parentNode;
+            const value = values[+comment.data.slice(2)];
             if (value instanceof Node) {
-              parent.insertBefore(value, node);
-            } else if (typeof value !== "string" && value[Symbol.iterator]) {
+              parent!.insertBefore(value, comment);
+            } else if (typeof value !== "string" && isIterable(value)) {
               if (value instanceof NodeList || value instanceof HTMLCollection) {
-                for (let i = value.length - 1, r = node; i >= 0; --i) {
-                  r = parent.insertBefore(value[i], r);
+                for (let i = value.length - 1, r: Node = comment; i >= 0; --i) {
+                  r = parent!.insertBefore(value[i], r);
                 }
               } else {
                 for (const subvalue of value) {
                   if (subvalue == null) continue;
-                  parent.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
+                  parent!.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue as string), comment);
                 }
               }
             } else {
-              parent.insertBefore(document.createTextNode(value), node);
+              parent!.insertBefore(document.createTextNode(value as string), comment);
             }
-            removeNodes.push(node);
+            removeNodes.push(comment);
           }
           break;
         }
@@ -600,23 +616,23 @@ function hypertext(render, postprocess) {
     }
 
     for (const node of removeNodes) {
-      node.parentNode.removeChild(node);
+      node.parentNode!.removeChild(node);
     }
 
     return postprocess(root);
   };
 }
 
-function entity(character) {
+function entity(character: string): string {
   return `&#${character.charCodeAt(0).toString()};`;
 }
 
-function isAsciiAlphaCode(code) {
+function isAsciiAlphaCode(code: number): boolean {
   return (CODE_UPPER_A <= code && code <= CODE_UPPER_Z)
       || (CODE_LOWER_A <= code && code <= CODE_LOWER_Z);
 }
 
-function isSpaceCode(code) {
+function isSpaceCode(code: number): boolean {
   return code === CODE_TAB
       || code === CODE_LF
       || code === CODE_FF
@@ -624,40 +640,136 @@ function isSpaceCode(code) {
       || code === CODE_CR; // normalize newlines
 }
 
-function isObjectLiteral(value) {
-  return value && value.toString === Object.prototype.toString;
+function isIterable(value: unknown): value is Iterable<unknown> {
+  return typeof value === "object" && value ? Symbol.iterator in value : false;
 }
 
-function isRawText(tagName) {
+function isValidTagName(name: string): boolean {
+  return /^[a-z][a-z0-9-]*$/i.test(name);
+}
+
+function isObjectLiteral(value: unknown): value is Record<string, unknown> {
+  return value ? value.toString === Object.prototype.toString : false;
+}
+
+function isRawText(tagName?: string): tagName is "script" | "style" | "textarea" | "title" {
   return tagName === "script" || tagName === "style" || isEscapableRawText(tagName);
 }
 
-function isEscapableRawText(tagName) {
+function isEscapableRawText(tagName?: string): tagName is "textarea" | "title" {
   return tagName === "textarea" || tagName === "title";
 }
 
-function lower(input, start, end) {
+function isAttributeString(input: string): boolean {
+  let state: number | undefined = STATE_BEFORE_ATTRIBUTE_NAME;
+  for (let i = 0, n = input.length; i < n; ++i) {
+    const code = input.charCodeAt(i);
+    switch (state) {
+      case STATE_BEFORE_ATTRIBUTE_NAME: {
+        if (isSpaceCode(code)) {
+          // continue
+        } else if (code === CODE_SLASH || code === CODE_GT) {
+          state = STATE_AFTER_ATTRIBUTE_NAME, --i;
+        } else {
+          state = STATE_ATTRIBUTE_NAME, --i;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_NAME: {
+        if (isSpaceCode(code) || code === CODE_SLASH || code === CODE_GT) {
+          state = STATE_AFTER_ATTRIBUTE_NAME, --i;
+        } else if (code === CODE_EQ) {
+          state = STATE_BEFORE_ATTRIBUTE_VALUE;
+        }
+        break;
+      }
+      case STATE_AFTER_ATTRIBUTE_NAME: {
+        if (isSpaceCode(code)) {
+          // ignore
+        } else if (code === CODE_SLASH) {
+          state = STATE_SELF_CLOSING_START_TAG;
+        } else if (code === CODE_EQ) {
+          state = STATE_BEFORE_ATTRIBUTE_VALUE;
+        } else if (code === CODE_GT) {
+          return false;
+        } else {
+          state = STATE_ATTRIBUTE_NAME, --i;
+        }
+        break;
+      }
+      case STATE_BEFORE_ATTRIBUTE_VALUE: {
+        if (isSpaceCode(code)) {
+          // continue
+        } else if (code === CODE_DQUOTE) {
+          state = STATE_ATTRIBUTE_VALUE_DOUBLE_QUOTED;
+        } else if (code === CODE_SQUOTE) {
+          state = STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED;
+        } else if (code === CODE_GT) {
+          return false;
+        } else {
+          state = STATE_ATTRIBUTE_VALUE_UNQUOTED, --i;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_VALUE_DOUBLE_QUOTED: {
+        if (code === CODE_DQUOTE) {
+          state = STATE_AFTER_ATTRIBUTE_VALUE_QUOTED;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED: {
+        if (code === CODE_SQUOTE) {
+          state = STATE_AFTER_ATTRIBUTE_VALUE_QUOTED;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_VALUE_UNQUOTED: {
+        if (isSpaceCode(code)) {
+          state = STATE_BEFORE_ATTRIBUTE_NAME;
+        } else if (code === CODE_GT) {
+          return false;
+        }
+        break;
+      }
+      case STATE_AFTER_ATTRIBUTE_VALUE_QUOTED: {
+        if (isSpaceCode(code)) {
+          state = STATE_BEFORE_ATTRIBUTE_NAME;
+        } else if (code === CODE_SLASH) {
+          state = STATE_SELF_CLOSING_START_TAG;
+        } else if (code === CODE_GT) {
+          return false;
+        } else {
+          state = STATE_BEFORE_ATTRIBUTE_NAME, --i;
+        }
+        break;
+      }
+    }
+  }
+  return true;
+}
+
+function lower(input: string, start?: number, end?: number): string {
   return input.slice(start, end).toLowerCase();
 }
 
-function setAttribute(node, name, value) {
+function setAttribute(node: Element, name: string, value: string): void {
   if (node.namespaceURI === NS_SVG) {
     name = name.toLowerCase();
     name = svgAdjustAttributes.get(name) || name;
     if (svgForeignAttributes.has(name)) {
-      node.setAttributeNS(svgForeignAttributes.get(name), name, value);
+      node.setAttributeNS(svgForeignAttributes.get(name)!, name, value);
       return;
     }
   }
   node.setAttribute(name, value);
 }
 
-function removeAttribute(node, name) {
+function removeAttribute(node: Element, name: string): void {
   if (node.namespaceURI === NS_SVG) {
     name = name.toLowerCase();
     name = svgAdjustAttributes.get(name) || name;
     if (svgForeignAttributes.has(name)) {
-      node.removeAttributeNS(svgForeignAttributes.get(name), name);
+      node.removeAttributeNS(svgForeignAttributes.get(name)!, name);
       return;
     }
   }
@@ -665,10 +777,10 @@ function removeAttribute(node, name) {
 }
 
 // We can’t use Object.assign because custom properties…
-function setStyles(style, values) {
+function setStyles(style: CSSStyleDeclaration, values: Record<string, unknown>): void {
   for (const name in values) {
     const value = values[name];
-    if (name.startsWith("--")) style.setProperty(name, value);
-    else style[name] = value;
+    if (name.startsWith("--")) style.setProperty(name, value as string);
+    else (style as any)[name] = value; // eslint-disable-line @typescript-eslint/no-explicit-any
   }
 }

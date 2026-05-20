@@ -1,6 +1,6 @@
-import assert from "assert";
+// @vitest-environment jsdom
 import {html, svg} from "../src/index.js";
-import it from "./jsdom.js";
+import {assert, it} from "vitest";
 
 const NS_XLINK = "http://www.w3.org/1999/xlink";
 const NS_XMLNS = "http://www.w3.org/2000/xmlns/";

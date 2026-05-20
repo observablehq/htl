@@ -2,7 +2,7 @@
 
 Hypertext Literal is a tagged template literal for HTML which interpolates values *based on context*, allowing automatic escaping and the interpolation of non-serializable values, such as event listeners, style objects, and other DOM nodes. It is inspired by [lit-html](https://lit-html.polymer-project.org/) and [HTM](https://github.com/developit/htm), and references the fantastically precise [HTML5 spec](https://html.spec.whatwg.org/multipage/parsing.html#tokenization).
 
-Hypertext Literal is open-sourced under the permissive ISC license, small (2KB), has no dependencies, and is available [on npm](https://www.npmjs.com/package/htl). To install:
+Hypertext Literal is open-sourced under the permissive ISC license, is small, has no dependencies, and is available [on npm](https://www.npmjs.com/package/htl). To install:
 
 ```
 npm install htl
@@ -78,7 +78,7 @@ html`<font color=${"red"}>This text has color.</font>`
 In cases where it is not possible to interpolate safely, namely with script and style elements where the interpolated value contains the corresponding end tag, an error is thrown.
 
 ```js
-html`<script>${"</script>"}</script>` // Error: unsafe raw text
+html`<script>${"</script>"}</script>` // Error: cannot interpolate </script> into <script>
 ```
 
 ### Styles
@@ -141,6 +141,17 @@ html`<span ${{
 }}>hover me</span>`
 ```
 
+### Attribute strings
+
+As an alternative to the above, you can interpolate one or more attributes as a string into a tag:
+
+```js
+html`<button ${"disabled"}>Can’t click me</button>`
+```
+```js
+html`<input ${"required type=email"}>`
+```
+
 ### Node values
 
 If an interpolated data value is a node, it is inserted into the result at the corresponding location. So if you have a function that generates a node (say itself using hypertext literal), you can embed the result into another hypertext literal.
@@ -172,6 +183,14 @@ html`<table style="width: 180px;">
 html`It’s as easy as ${new Set([1, 2, 3])}.`
 ```
 
+### Dynamic tags
+
+The tag name can be specified dynamically:
+
+```js
+html`<${"button"}>Click me</${"button"}>`
+```
+
 ### SVG
 
 You can create contextual SVG fragments using hypertext literals, too.
@@ -184,10 +203,16 @@ svg`<svg width=60 height=60>
 
 ### Errors on invalid bindings
 
-Hypertext literal tolerates malformed input—per the HTML5 specification—but it still tries to be helpful by throwing an error if you interpolate a value into an unexpected place. For instance, it doesn’t allow dynamic tag names.
+Hypertext literal tolerates malformed input—per the HTML5 specification—but it still tries to be helpful by throwing an error if you interpolate a value into an unexpected place.
 
 ```js
-html`<${"button"}>Does this work?</>` // Error: invalid binding
+html`<${"input checked"}>` // Error: invalid tag name: input checked
+```
+```js
+html`<script>${"</script>"}</script>` // Error: cannot interpolate </script> into <script>
+```
+```js
+html`<but${"ton"}>Does this work?</button>` // Error: cannot interpolate in state 4
 ```
 
 ### Use with DOM API
