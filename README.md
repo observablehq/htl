@@ -78,7 +78,7 @@ html`<font color=${"red"}>This text has color.</font>`
 In cases where it is not possible to interpolate safely, namely with script and style elements where the interpolated value contains the corresponding end tag, an error is thrown.
 
 ```js
-html`<script>${"</script>"}</script>` // Error: unsafe raw text
+html`<script>${"</script>"}</script>` // Error: cannot interpolate </script> into <script>
 ```
 
 ### Styles

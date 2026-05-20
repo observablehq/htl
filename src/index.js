@@ -182,7 +182,7 @@ function hypertext(render, postprocess) {
               if (isEscapableRawText(tagName)) {
                 string += text.replace(/[<]/g, entity);
               } else if (new RegExp(`</${tagName}[\\s>/]`, "i").test(string.slice(-tagName.length - 2) + text)) {
-                throw new Error(`unsafe raw text contains </${tagName}>`); // appropriate end tag
+                throw new Error(`cannot interpolate </${tagName}> into <${tagName}>`);
               } else {
                 string += text;
               }
