@@ -10,7 +10,7 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "lint": "tsc --noEmit && eslint src",
+    "lint": "tsc --noEmit && eslint src test",
     "test": "vitest",
     "prepublishOnly": "rm -rf dist && tsc"
   },
@@ -18,8 +18,8 @@
     "dist"
   ],
   "exports": {
-    "types": "./dist/src/index.d.ts",
-    "import": "./dist/src/index.js"
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
