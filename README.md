@@ -141,6 +141,17 @@ html`<span ${{
 }}>hover me</span>`
 ```
 
+### Attribute strings
+
+As an alternative to the above, you can interpolate one or more attributes as a string into a tag;
+
+```js
+html`<button ${"disabled"}>Can’t click me</button>`
+```
+```js
+html`<input ${"required type=email"}>`
+```
+
 ### Node values
 
 If an interpolated data value is a node, it is inserted into the result at the corresponding location. So if you have a function that generates a node (say itself using hypertext literal), you can embed the result into another hypertext literal.
@@ -172,6 +183,14 @@ html`<table style="width: 180px;">
 html`It’s as easy as ${new Set([1, 2, 3])}.`
 ```
 
+### Dynamic tags
+
+The tag name can be specified dynamically:
+
+```js
+html`<${"button"}>Click me</${"button"}>`
+```
+
 ### SVG
 
 You can create contextual SVG fragments using hypertext literals, too.
@@ -184,10 +203,16 @@ svg`<svg width=60 height=60>
 
 ### Errors on invalid bindings
 
-Hypertext literal tolerates malformed input—per the HTML5 specification—but it still tries to be helpful by throwing an error if you interpolate a value into an unexpected place. For instance, it doesn’t allow dynamic tag names.
+Hypertext literal tolerates malformed input—per the HTML5 specification—but it still tries to be helpful by throwing an error if you interpolate a value into an unexpected place.
 
 ```js
-html`<${"button"}>Does this work?</>` // Error: invalid binding
+html`<${"input checked"}>` // Error: invalid tag name: input checked
+```
+```js
+html`<script>${"</script>"}</script>` // Error: cannot interpolate </script> into <script>
+```
+```js
+html`<but${"ton"}>Does this work?</button>` // Error: cannot interpolate in state 4
 ```
 
 ### Use with DOM API
