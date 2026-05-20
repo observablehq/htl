@@ -243,7 +243,12 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
               nodeFilter |= SHOW_ELEMENT;
               break;
             }
-            throw new Error("interpolated attributes must be specified as {[name]: value} literal"); // TODO relax
+            const text = `${value}`;
+            if (isAttributeString(text)) {
+              string += text;
+              break;
+            }
+            throw new Error("interpolated attribute name contains bare '>'");
           }
           case STATE_COMMENT: break;
           default: throw new Error("tag name cannot be interpolated");
@@ -639,6 +644,94 @@ function isRawText(tagName?: string): tagName is "script" | "style" | "textarea"
 
 function isEscapableRawText(tagName?: string): tagName is "textarea" | "title" {
   return tagName === "textarea" || tagName === "title";
+}
+
+function isAttributeString(input: string): boolean {
+  let state: number | undefined = STATE_BEFORE_ATTRIBUTE_NAME;
+  for (let i = 0, n = input.length; i < n; ++i) {
+    const code = input.charCodeAt(i);
+    switch (state) {
+      case STATE_BEFORE_ATTRIBUTE_NAME: {
+        if (isSpaceCode(code)) {
+          // continue
+        } else if (code === CODE_SLASH || code === CODE_GT) {
+          state = STATE_AFTER_ATTRIBUTE_NAME, --i;
+        } else {
+          state = STATE_ATTRIBUTE_NAME, --i;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_NAME: {
+        if (isSpaceCode(code) || code === CODE_SLASH || code === CODE_GT) {
+          state = STATE_AFTER_ATTRIBUTE_NAME, --i;
+        } else if (code === CODE_EQ) {
+          state = STATE_BEFORE_ATTRIBUTE_VALUE;
+        }
+        break;
+      }
+      case STATE_AFTER_ATTRIBUTE_NAME: {
+        if (isSpaceCode(code)) {
+          // ignore
+        } else if (code === CODE_SLASH) {
+          state = STATE_SELF_CLOSING_START_TAG;
+        } else if (code === CODE_EQ) {
+          state = STATE_BEFORE_ATTRIBUTE_VALUE;
+        } else if (code === CODE_GT) {
+          return false;
+        } else {
+          state = STATE_ATTRIBUTE_NAME, --i;
+        }
+        break;
+      }
+      case STATE_BEFORE_ATTRIBUTE_VALUE: {
+        if (isSpaceCode(code)) {
+          // continue
+        } else if (code === CODE_DQUOTE) {
+          state = STATE_ATTRIBUTE_VALUE_DOUBLE_QUOTED;
+        } else if (code === CODE_SQUOTE) {
+          state = STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED;
+        } else if (code === CODE_GT) {
+          return false;
+        } else {
+          state = STATE_ATTRIBUTE_VALUE_UNQUOTED, --i;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_VALUE_DOUBLE_QUOTED: {
+        if (code === CODE_DQUOTE) {
+          state = STATE_AFTER_ATTRIBUTE_VALUE_QUOTED;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_VALUE_SINGLE_QUOTED: {
+        if (code === CODE_SQUOTE) {
+          state = STATE_AFTER_ATTRIBUTE_VALUE_QUOTED;
+        }
+        break;
+      }
+      case STATE_ATTRIBUTE_VALUE_UNQUOTED: {
+        if (isSpaceCode(code)) {
+          state = STATE_BEFORE_ATTRIBUTE_NAME;
+        } else if (code === CODE_GT) {
+          return false;
+        }
+        break;
+      }
+      case STATE_AFTER_ATTRIBUTE_VALUE_QUOTED: {
+        if (isSpaceCode(code)) {
+          state = STATE_BEFORE_ATTRIBUTE_NAME;
+        } else if (code === CODE_SLASH) {
+          state = STATE_SELF_CLOSING_START_TAG;
+        } else if (code === CODE_GT) {
+          return false;
+        } else {
+          state = STATE_BEFORE_ATTRIBUTE_NAME, --i;
+        }
+        break;
+      }
+    }
+  }
+  return true;
 }
 
 function lower(input: string, start?: number, end?: number): string {

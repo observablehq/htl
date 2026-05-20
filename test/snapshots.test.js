@@ -24,8 +24,8 @@ it("staticText", () => {
   expect(html`Hello, world!`).toMatchInlineSnapshot(`Hello, world!`);
 });
 
-it("staticImpliedSpan", async () => {
-  await expect(html`Hello, <i>world</i>!`).toMatchInlineSnapshot(`<span>Hello, <i>world</i>!</span>`);
+it("staticImpliedSpan", () => {
+  expect(html`Hello, <i>world</i>!`).toMatchInlineSnapshot(`<span>Hello, <i>world</i>!</span>`);
 });
 
 it("staticExplicitSpan", () => {
@@ -146,6 +146,18 @@ it("emptyUnquotedAttributeTruePrefix", () => {
 
 it("emptyUnquotedAttributeFalsePrefix", () => {
   expect(html`<button value=${true}${""}>`).toMatchInlineSnapshot(`<button value="true"></button>`);
+});
+
+it("interpolatedAttributes", () => {
+  expect(html`<input ${"checked"}>`).toMatchInlineSnapshot(`<input checked="">`);
+});
+
+it("interpolatedAttributesMultiple", () => {
+  expect(html`<input ${`checked size=${4}`}>`).toMatchInlineSnapshot(`<input checked="" size="4">`);
+});
+
+it("interpolatedAttributesGreaterThan", () => {
+  expect(html`<input ${`checked size="<whatever>"`}>`).toMatchInlineSnapshot(`<input checked="" size="<whatever>">`);
 });
 
 it("optionalText", () => {
