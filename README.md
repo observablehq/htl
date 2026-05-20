@@ -143,7 +143,7 @@ html`<span ${{
 
 ### Attribute strings
 
-As an alternative to the above, you can interpolate one or more attributes as a string into a tag;
+As an alternative to the above, you can interpolate one or more attributes as a string into a tag:
 
 ```js
 html`<button ${"disabled"}>Can’t click me</button>`
