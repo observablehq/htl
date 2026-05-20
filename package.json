@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git+https://github.com/observablehq/htl.git"
   },
-  "version": "0.3.1",
+  "version": "1.0.0",
   "type": "module",
   "sideEffects": false,
   "scripts": {
