@@ -92,6 +92,10 @@ it("interpolatedStyleString", () => {
   expect(html`<span style="background: ${"yellow; font-style: italic"};">It’s yellow (and italic).</span>`).toMatchInlineSnapshot(`<span style="background: yellow; font-style: italic;">It’s yellow (and italic).</span>`);
 });
 
+it("interpolateIntoTag", () => {
+  expect(html`<${"button"}>hello</${"button"}>`).toMatchInlineSnapshot(`<button>hello</button>`);
+});
+
 it("booleanAttribute", () => {
   expect(html`<button disabled=${true}>Can’t click me</button>`).toMatchInlineSnapshot(`<button disabled="">Can’t click me</button>`);
 });

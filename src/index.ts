@@ -202,6 +202,16 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
             }
             break;
           }
+          case STATE_TAG_OPEN:
+          case STATE_RAWTEXT_END_TAG_OPEN:
+          case STATE_END_TAG_OPEN: {
+            const text = `${value}`;
+            if (!isValidTagName(text)) throw new Error(`invalid tag name: ${value}`);
+            string += text;
+            tagName = text.toLowerCase();
+            state = STATE_BEFORE_ATTRIBUTE_NAME;
+            break;
+          }
           case STATE_BEFORE_ATTRIBUTE_VALUE: {
             state = STATE_ATTRIBUTE_VALUE_UNQUOTED;
             let text;
@@ -251,7 +261,7 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
             throw new Error("interpolated attribute name contains bare '>'");
           }
           case STATE_COMMENT: break;
-          default: throw new Error("tag name cannot be interpolated");
+          default: throw new Error(`cannot interpolate in state ${state}`);
         }
       }
 
@@ -632,6 +642,10 @@ function isSpaceCode(code: number): boolean {
 
 function isIterable(value: unknown): value is Iterable<unknown> {
   return typeof value === "object" && value ? Symbol.iterator in value : false;
+}
+
+function isValidTagName(name: string): boolean {
+  return /^[a-z][a-z0-9-]*$/i.test(name);
 }
 
 function isObjectLiteral(value: unknown): value is Record<string, unknown> {
