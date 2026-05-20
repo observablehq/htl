@@ -195,7 +195,7 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
             if (value == null) {
               // ignore
             } else if (value instanceof Node
-                || (typeof value !== "string" && value[Symbol.iterator])
+                || (typeof value !== "string" && isIterable(value))
                 || (/(?:^|>)$/.test(strings[j - 1]) && /^(?:<|$)/.test(input))) {
               string += "<!--::" + j + "-->";
               nodeFilter |= SHOW_COMMENT;
@@ -538,62 +538,64 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
     const root = render(string);
 
     const walker = document.createTreeWalker(root, nodeFilter, null);
-    const removeNodes = [];
+    const removeNodes: Node[] = [];
     while (walker.nextNode()) {
       const node = walker.currentNode;
       switch (node.nodeType) {
         case TYPE_ELEMENT: {
-          const attributes = (node as Element).attributes;
+          const element = node as Element;
+          const attributes = element.attributes;
           for (let i = 0, n = attributes.length; i < n; ++i) {
             const {name, value: currentValue} = attributes[i];
             if (/^::/.test(name)) {
               const value = values[+name.slice(2)] as Record<string, unknown>;
-              removeAttribute(node, name), --i, --n;
+              removeAttribute(element, name), --i, --n;
               for (const key in value) {
                 const subvalue = value[key];
                 if (subvalue == null || subvalue === false) {
                   // ignore
                 } else if (typeof subvalue === "function") {
-                  (node as any)[key] = subvalue;
+                  (element as HTMLElement)[key as "onclick"] = subvalue as () => void;
                 } else if (key === "style" && isObjectLiteral(subvalue)) {
-                  setStyles((node as HTMLElement)[key], subvalue);
+                  setStyles((element as HTMLElement)[key], subvalue);
                 } else {
-                  setAttribute(node, key, subvalue === true ? "" : subvalue);
+                  setAttribute(element, key, subvalue === true ? "" : subvalue as string);
                 }
               }
             } else if (/^::/.test(currentValue)) {
               const value = values[+currentValue.slice(2)];
-              removeAttribute(node, name), --i, --n;
+              removeAttribute(element, name), --i, --n;
               if (typeof value === "function") {
-                (node as any)[name] = value;
+                (element as any)[name] = value;
               } else { // style
-                setStyles((node as HTMLElement)[name], value); // TODO seems wrong?
+                setStyles((element as HTMLElement)[name], value as Record<string, unknown>); // TODO seems wrong?
               }
             }
           }
           break;
         }
         case TYPE_COMMENT: {
-          if (/^::/.test(node.data)) {
-            const parent = node.parentNode;
-            const value = values[+node.data.slice(2)];
+          const comment = node as Comment;
+          if (/^::/.test(comment.data)) {
+            const parent = comment.parentNode;
+            const value = values[+comment.data.slice(2)];
             if (value instanceof Node) {
-              parent!.insertBefore(value, node);
-            } else if (typeof value !== "string" && value[Symbol.iterator]) {
+              parent!.insertBefore(value, comment);
+            } else if (typeof value !== "string" && isIterable(value)) {
               if (value instanceof NodeList || value instanceof HTMLCollection) {
-                for (let i = value.length - 1, r = node; i >= 0; --i) {
+                for (let i = value.length - 1, r: Node = comment; i >= 0; --i) {
                   r = parent!.insertBefore(value[i], r);
                 }
               } else {
                 for (const subvalue of value) {
                   if (subvalue == null) continue;
-                  parent!.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue), node);
+                  parent!.insertBefore(subvalue instanceof Node ? subvalue : document.createTextNode(subvalue as string), comment);
                 }
               }
             } else {
-              parent!.insertBefore(document.createTextNode(value), node);
+              parent!.insertBefore(document.createTextNode(value as string), comment);
             }
-            removeNodes.push(node);
+            removeNodes.push(comment);
           }
           break;
         }
@@ -625,15 +627,19 @@ function isSpaceCode(code: number): boolean {
       || code === CODE_CR; // normalize newlines
 }
 
-function isObjectLiteral(value: unknown): boolean {
-  return value && value.toString === Object.prototype.toString;
+function isIterable(value: unknown): value is Iterable<unknown> {
+  return typeof value === "object" && value ? Symbol.iterator in value : false;
 }
 
-function isRawText(tagName: string): tagName is "script" | "style" | "textarea" | "title" {
+function isObjectLiteral(value: unknown): value is Record<string, unknown> {
+  return value ? value.toString === Object.prototype.toString : false;
+}
+
+function isRawText(tagName?: string): tagName is "script" | "style" | "textarea" | "title" {
   return tagName === "script" || tagName === "style" || isEscapableRawText(tagName);
 }
 
-function isEscapableRawText(tagName: string): tagName is "textarea" | "title" {
+function isEscapableRawText(tagName?: string): tagName is "textarea" | "title" {
   return tagName === "textarea" || tagName === "title";
 }
 
@@ -666,10 +672,10 @@ function removeAttribute(node: Element, name: string): void {
 }
 
 // We can’t use Object.assign because custom properties…
-function setStyles(style: CSSStyleDeclaration, values: Record<string, string>): void {
+function setStyles(style: CSSStyleDeclaration, values: Record<string, unknown>): void {
   for (const name in values) {
     const value = values[name];
-    if (name.startsWith("--")) style.setProperty(name, value);
+    if (name.startsWith("--")) style.setProperty(name, value as string);
     else (style as any)[name] = value;
   }
 }
