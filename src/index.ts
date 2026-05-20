@@ -170,6 +170,8 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
     let attributeNameEnd: number | undefined;
     let nodeFilter = 0;
 
+    values.unshift(null); // TODO
+
     for (let j = 0, m = values.length; j < m; ++j) {
       const input = strings[j];
 
