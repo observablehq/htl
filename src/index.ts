@@ -161,7 +161,7 @@ const svgForeignAttributes = new Map([
 ]);
 
 function hypertext<T extends Node, S>(render: (input: string) => T, postprocess: (output: T) => S) {
-  return function({raw: strings}: TemplateStringsArray, ...values: unknown[]) {
+  return ({raw: strings}: TemplateStringsArray, ...values: unknown[]) => {
     let state: number | undefined = STATE_DATA;
     let string = "";
     let tagNameStart: number | undefined; // either an open tag or an end tag
@@ -170,12 +170,10 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
     let attributeNameEnd: number | undefined;
     let nodeFilter = 0;
 
-    values.unshift(null); // TODO
+    for (let j = -1, m = values.length; j < m; ++j) {
+      const input = strings[j + 1];
 
-    for (let j = 0, m = values.length; j < m; ++j) {
-      const input = strings[j];
-
-      if (j > 0) {
+      if (j >= 0) {
         const value = values[j];
         switch (state) {
           case STATE_RAWTEXT: {
@@ -196,8 +194,8 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
               // ignore
             } else if (value instanceof Node
                 || (typeof value !== "string" && isIterable(value))
-                || (/(?:^|>)$/.test(strings[j - 1]) && /^(?:<|$)/.test(input))) {
-              string += "<!--::" + j + "-->";
+                || (/(?:^|>)$/.test(strings[j]) && /^(?:<|$)/.test(input))) {
+              string += `<!--::${j}-->`;
               nodeFilter |= SHOW_COMMENT;
             } else {
               string += `${value}`.replace(/[<&]/g, entity);
@@ -209,16 +207,16 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
             let text;
             if (/^[\s>]/.test(input)) {
               if (value == null || value === false) {
-                string = string.slice(0, attributeNameStart! - strings[j - 1].length);
+                string = string.slice(0, attributeNameStart! - strings[j].length);
                 break;
               }
               if (value === true || (text = `${value}`) === "") {
                 string += "''";
                 break;
               }
-              const name = strings[j - 1].slice(attributeNameStart, attributeNameEnd);
+              const name = strings[j].slice(attributeNameStart, attributeNameEnd);
               if ((name === "style" && isObjectLiteral(value)) || typeof value === "function") {
-                string += "::" + j;
+                string += `::${j}`;
                 nodeFilter |= SHOW_ELEMENT;
                 break;
               }
@@ -241,7 +239,7 @@ function hypertext<T extends Node, S>(render: (input: string) => T, postprocess:
           }
           case STATE_BEFORE_ATTRIBUTE_NAME: {
             if (isObjectLiteral(value)) {
-              string += "::" + j + "=''";
+              string += `::${j}=''`;
               nodeFilter |= SHOW_ELEMENT;
               break;
             }
